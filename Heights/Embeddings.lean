@@ -20,6 +20,9 @@ lemma one_lt_absNorm {S : Type u_1} [CommRing S] [Nontrivial S] [IsDedekindDomai
 end Ideal
 
 open IsDedekindDomain.HeightOneSpectrum  WithZeroMulInt Ideal NumberField
+
+section absoluteValue
+
 variable {K : Type*} [Field K] [NumberField K] (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
 
 /-- The norm of a maximal ideal as an element of ℝ≥0 is > 1  -/
@@ -56,10 +59,12 @@ noncomputable def vadic_abv : AbsoluteValue K ℝ where
 
 theorem vadic_abv_def : vadic_abv v x = (toNNReal (norm_ne_zero v) (v.valuation x)) := rfl
 
+end absoluteValue
 
+section FinitePlace
+variable {K : Type*} [Field K] [NumberField K] (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
 
-
-noncomputable instance i1 : Valuation.RankOne (IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion K v).v where
+noncomputable instance instinstRankOneValuedAdicCompletion : Valuation.RankOne (IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion K v).v where
   hom := {
     toFun := toNNReal (norm_ne_zero v)
     map_zero' := rfl
@@ -78,13 +83,11 @@ noncomputable instance i1 : Valuation.RankOne (IsDedekindDomain.HeightOneSpectru
       rw [IsDedekindDomain.HeightOneSpectrum.valuation_eq_intValuationDef, IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
       simp_all only [ne_eq, Ideal.dvd_span_singleton]
 
-noncomputable instance i2 : NormedField (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) :=
+noncomputable instance instinstNormedFieldValuedAdicCompletion : NormedField (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) :=
     Valued.toNormedField (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) (WithZero (Multiplicative ℤ))
 
---noncomputable instance : NormedDivisionRing (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) := NormedField.toNormedDivisionRing
-
 /-- A finite place of a number field `K` is a place associated to an embedding into a completion with rescect to a maximal ideal. -/
-def NumberField.FinitePlace := { w : AbsoluteValue K ℝ //
+def NumberField.FinitePlace (K : Type*) [Field K] [NumberField K] := { w : AbsoluteValue K ℝ //
     ∃ (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)),
     ∃ φ : K →+* (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v), place φ = w }
 
@@ -107,28 +110,79 @@ noncomputable def NumberField.FinitePlace.mk (v : IsDedekindDomain.HeightOneSpec
         norm_cast
     }
     use f
-    have a := i1 v
-    have b := i2 v
     ext x
     simp only [place_apply, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, f, norm,
-      NormedField.toNormedDivisionRing]
-    unfold norm
-    unfold NormedField.toNorm
-    simp [i2]
+      NormedField.toNormedDivisionRing, instinstNormedFieldValuedAdicCompletion, instinstRankOneValuedAdicCompletion, Valued.toNormedField, Valued.norm, Valued.valuedCompletion_apply]
+    norm_cast
+
+end FinitePlace
+namespace NumberField.FinitePlace
+open NumberField
+variable {K : Type*} [Field K] [NumberField K]
+
+instance : FunLike (FinitePlace K) K ℝ where
+  coe w x := w.1 x
+  coe_injective' _ _ h := Subtype.eq (AbsoluteValue.ext fun x => congr_fun h x)
+
+instance : MonoidWithZeroHomClass (FinitePlace K) K ℝ where
+  map_mul w _ _ := w.1.map_mul _ _
+  map_one w := w.1.map_one
+  map_zero w := w.1.map_zero
+
+instance : NonnegHomClass (FinitePlace K) K ℝ where
+  apply_nonneg w _ := w.1.nonneg _
+
+@[simp]
+theorem apply (x : K) : (mk v) x = vadic_abv v x := rfl
+
+noncomputable def maximal_ideal (w : FinitePlace K) : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := Exists.choose w.2
+
+/-- For a finite place `w`, return an embedding `φ` such that `w = finite_place φ` . -/
+noncomputable def embedding (w : FinitePlace K) : K →+* (IsDedekindDomain.HeightOneSpectrum.adicCompletion K (maximal_ideal w)) := Exists.choose (Exists.choose_spec w.2)
+
+/- @[simp]
+theorem mk_max_ideal (w : FinitePlace K) : mk (maximal_ideal w) = w := by
+
+  have := w.2.choose_spec
+  apply Subtype.ext
+
+  have := Exists.choose this
+  rename_i this_1
+  obtain ⟨w_1, h⟩ := this_1
+  rw [← h]
+  ext x
+  simp_all [apply x]
+  push_cast
+  rw [apply x]
+  sorry
+
+   -/
 
 
-
-    /-
-    simp only [place_apply, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, vadic_abv_def, f]
+--Subtype.ext w.2.choose_spec
 
 
+/- theorem norm_embedding_eq (w : FinitePlace K) (x : K) :
+    ‖(embedding w) x‖ = w x := by
+  nth_rewrite 2 [← mk_embedding w]
+  rfl -/
+/-
+theorem eq_iff_eq (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x = r) ↔ ∀ φ : K →+* ℂ, ‖φ x‖ = r :=
+  ⟨fun hw φ => hw (mk φ), by rintro hφ ⟨w, ⟨φ, rfl⟩⟩; exact hφ φ⟩
 
-    --unfold NormedDivisionRing.toNorm
-    unfold norm
-    unfold NormedDivisionRing.toNorm
-    --simp_all only [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, f]
-    unfold NormedField.toNormedDivisionRing
-    unfold instNormedFieldAdicCompletionRingOfIntegers_heights
-     -/
+theorem le_iff_le (x : K) (r : ℝ) : (∀ w : InfinitePlace K, w x ≤ r) ↔ ∀ φ : K →+* ℂ, ‖φ x‖ ≤ r :=
+  ⟨fun hw φ => hw (mk φ), by rintro hφ ⟨w, ⟨φ, rfl⟩⟩; exact hφ φ⟩ -/
+
+theorem pos_iff {w : FinitePlace K} {x : K} : 0 < w x ↔ x ≠ 0 := AbsoluteValue.pos_iff w.1
+
+@[simp]
+theorem mk_eq_iff {v₁ v₂ : IsDedekindDomain.HeightOneSpectrum (𝓞 K)} : mk v₁ = mk v₂ ↔ v₁ = v₂ := by
+  constructor
+  · intro h
 
     sorry
+  · intro a
+    subst a
+    simp_all only
+
+end NumberField.FinitePlace

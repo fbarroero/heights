@@ -192,10 +192,10 @@ open IsDedekindDomain.HeightOneSpectrum  WithZeroMulInt
 
 /-- The Padic norm with respect to a maximal ideal.  -/
 noncomputable def PadicNorm : K → ℝ := fun x =>
-    toNNReal (norm_ne_zero P) ((IsDedekindDomain.HeightOneSpectrum.valuation P) x)
+    toNNReal (norm_ne_zero P) (IsDedekindDomain.HeightOneSpectrum.valuation P x)
 
 theorem PadicNorm_def (x : K) : PadicNorm P x =
-    toNNReal (norm_ne_zero P) ((IsDedekindDomain.HeightOneSpectrum.valuation P) x) :=
+    toNNReal (norm_ne_zero P) (IsDedekindDomain.HeightOneSpectrum.valuation P x) :=
     rfl
 
 lemma Padic_norm_zero : PadicNorm P 0 = 0 := by
