@@ -21,6 +21,8 @@ end Ideal
 
 open IsDedekindDomain.HeightOneSpectrum  WithZeroMulInt Ideal NumberField
 
+namespace NumberField
+
 section absoluteValue
 
 variable {K : Type*} [Field K] [NumberField K] (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
@@ -61,10 +63,17 @@ theorem vadic_abv_def : vadic_abv v x = (toNNReal (norm_ne_zero v) (v.valuation 
 
 end absoluteValue
 
+
+end NumberField
+
+
 section FinitePlace
 variable {K : Type*} [Field K] [NumberField K] (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
 
-noncomputable instance instinstRankOneValuedAdicCompletion : Valuation.RankOne (IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion K v).v where
+def embedding : K →+* (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) :=
+    @UniformSpace.Completion.coeRingHom K _ v.adicValued.toUniformSpace _ _
+
+noncomputable instance instRankOneValuedAdicCompletion : Valuation.RankOne (IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion K v).v where
   hom := {
     toFun := toNNReal (norm_ne_zero v)
     map_zero' := rfl
@@ -83,37 +92,24 @@ noncomputable instance instinstRankOneValuedAdicCompletion : Valuation.RankOne (
       rw [IsDedekindDomain.HeightOneSpectrum.valuation_eq_intValuationDef, IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
       simp_all only [ne_eq, Ideal.dvd_span_singleton]
 
-noncomputable instance instinstNormedFieldValuedAdicCompletion : NormedField (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) :=
+noncomputable instance instNormedFieldValuedAdicCompletion : NormedField (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) :=
     Valued.toNormedField (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v) (WithZero (Multiplicative ℤ))
 
 /-- A finite place of a number field `K` is a place associated to an embedding into a completion with rescect to a maximal ideal. -/
 def NumberField.FinitePlace (K : Type*) [Field K] [NumberField K] := { w : AbsoluteValue K ℝ //
-    ∃ (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)),
-    ∃ φ : K →+* (IsDedekindDomain.HeightOneSpectrum.adicCompletion K v), place φ = w }
+    ∃ (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)), place (embedding v) = w }
 
 /-- Return the finite place defined by a maximal ideal `v`. -/
-noncomputable def NumberField.FinitePlace.mk (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) : @NumberField.FinitePlace K _ _ where
-  val := vadic_abv v
-  property := by
-    use v
-    let f : K →+* adicCompletion K v := {
-      toFun := fun x ↦ x
-      map_one' := rfl
-      map_mul' := by
-        simp only
-        intro x y
-        norm_cast
-      map_zero' := rfl
-      map_add' := by
-        simp only
-        intro x y
-        norm_cast
-    }
-    use f
-    ext x
-    simp only [place_apply, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, f, norm,
-      NormedField.toNormedDivisionRing, instinstNormedFieldValuedAdicCompletion, instinstRankOneValuedAdicCompletion, Valued.toNormedField, Valued.norm, Valued.valuedCompletion_apply]
-    norm_cast
+noncomputable def NumberField.FinitePlace.mk (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) :
+    NumberField.FinitePlace K := ⟨place (embedding v), ⟨v, rfl⟩⟩
+
+theorem NumberField.FinitePlace.norm_def (x : K) : ‖(embedding v) x‖ = toNNReal (norm_ne_zero v) (v.valuation x) := by
+  by_cases h : x = 0
+  · subst h
+    simp_all only [map_zero, norm_zero, NNReal.coe_zero]
+  · --unfold embedding
+    simp [embedding, UniformSpace.Completion.coeRingHom, NormedField.toNorm, instNormedFieldValuedAdicCompletion, Valued.toNormedField, instFieldAdicCompletion, Valued.norm, Valuation.RankOne.hom]
+    rfl
 
 end FinitePlace
 namespace NumberField.FinitePlace
@@ -133,56 +129,42 @@ instance : NonnegHomClass (FinitePlace K) K ℝ where
   apply_nonneg w _ := w.1.nonneg _
 
 @[simp]
-theorem apply (x : K) : (mk v) x = vadic_abv v x := rfl
+theorem apply (x : K) : (mk v) x =  ‖embedding v x‖ := rfl
 
-noncomputable def maximal_ideal (w : FinitePlace K) : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := Exists.choose w.2
+noncomputable def maximal_ideal (w : FinitePlace K) : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := w.2.choose
 
-/-- For a finite place `w`, return an embedding `φ` such that `w = finite_place φ` . -/
-noncomputable def embedding (w : FinitePlace K) : K →+* (IsDedekindDomain.HeightOneSpectrum.adicCompletion K (maximal_ideal w)) := Exists.choose (Exists.choose_spec w.2)
+/-- For a finite place `w`, return a maximal ideal `v` such that `w = finite_place v` . -/
+@[simp]
+theorem mk_max_ideal (w : FinitePlace K) : mk (maximal_ideal w) = w := Subtype.ext w.2.choose_spec
 
-/- @[simp]
-theorem mk_max_ideal (w : FinitePlace K) : mk (maximal_ideal w) = w := by
+theorem norm_embedding_eq (w : FinitePlace K) (x : K) :
+    ‖(embedding (maximal_ideal w)) x‖ = w x := by
+  have h : w x = (mk (maximal_ideal w)) x := by simp only [mk_max_ideal]
+  rw [h]
+  rfl
 
-  have := w.2.choose_spec
-  apply Subtype.ext
+theorem eq_iff_eq (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x = r) ↔ ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) x‖ = r := Set.forall_subtype_range_iff
 
-  have := Exists.choose this
-  rename_i this_1
-  obtain ⟨w_1, h⟩ := this_1
-  rw [← h]
-  ext x
-  simp_all [apply x]
-  push_cast
-  rw [apply x]
-  sorry
-
-   -/
-
-
---Subtype.ext w.2.choose_spec
-
-
-/- theorem norm_embedding_eq (w : FinitePlace K) (x : K) :
-    ‖(embedding w) x‖ = w x := by
-  nth_rewrite 2 [← mk_embedding w]
-  rfl -/
-/-
-theorem eq_iff_eq (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x = r) ↔ ∀ φ : K →+* ℂ, ‖φ x‖ = r :=
-  ⟨fun hw φ => hw (mk φ), by rintro hφ ⟨w, ⟨φ, rfl⟩⟩; exact hφ φ⟩
-
-theorem le_iff_le (x : K) (r : ℝ) : (∀ w : InfinitePlace K, w x ≤ r) ↔ ∀ φ : K →+* ℂ, ‖φ x‖ ≤ r :=
-  ⟨fun hw φ => hw (mk φ), by rintro hφ ⟨w, ⟨φ, rfl⟩⟩; exact hφ φ⟩ -/
+theorem le_iff_le (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x ≤ r) ↔ ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) x‖ ≤ r := Set.forall_subtype_range_iff
 
 theorem pos_iff {w : FinitePlace K} {x : K} : 0 < w x ↔ x ≠ 0 := AbsoluteValue.pos_iff w.1
 
 @[simp]
 theorem mk_eq_iff {v₁ v₂ : IsDedekindDomain.HeightOneSpectrum (𝓞 K)} : mk v₁ = mk v₂ ↔ v₁ = v₂ := by
   constructor
-  · intro h
+  · contrapose!
+    intro h
+    rw [@DFunLike.ne_iff]
+    have : ∃ x : 𝓞 K, x ∈ v₁.asIdeal ∧ x ∉ v₂.asIdeal := by
+
+      sorry
+    rcases this with ⟨x, hx1, hx2⟩
+    use x
+    simp only [apply]
 
     sorry
   · intro a
     subst a
-    simp_all only
+    rfl
 
 end NumberField.FinitePlace
