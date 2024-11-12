@@ -143,28 +143,45 @@ theorem norm_embedding_eq (w : FinitePlace K) (x : K) :
   rw [h]
   rfl
 
-theorem eq_iff_eq (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x = r) ↔ ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) x‖ = r := Set.forall_subtype_range_iff
+theorem eq_iff_eq (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x = r) ↔
+    ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) x‖ = r :=
+    Set.forall_subtype_range_iff
 
-theorem le_iff_le (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x ≤ r) ↔ ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) x‖ ≤ r := Set.forall_subtype_range_iff
+theorem le_iff_le (x : K) (r : ℝ) : (∀ w : FinitePlace K, w x ≤ r) ↔
+    ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) x‖ ≤ r :=
+    Set.forall_subtype_range_iff
 
 theorem pos_iff {w : FinitePlace K} {x : K} : 0 < w x ↔ x ≠ 0 := AbsoluteValue.pos_iff w.1
 
 @[simp]
 theorem mk_eq_iff {v₁ v₂ : IsDedekindDomain.HeightOneSpectrum (𝓞 K)} : mk v₁ = mk v₂ ↔ v₁ = v₂ := by
-  constructor
-  · contrapose!
-    intro h
-    rw [@DFunLike.ne_iff]
-    have : ∃ x : 𝓞 K, x ∈ v₁.asIdeal ∧ x ∉ v₂.asIdeal := by
-
-      sorry
-    rcases this with ⟨x, hx1, hx2⟩
-    use x
-    simp only [apply]
-
-    sorry
-  · intro a
-    subst a
-    rfl
+  refine ⟨?_,  fun a ↦ by rw [a]⟩
+  contrapose!
+  intro h
+  rw [@DFunLike.ne_iff]
+  have : ∃ x : 𝓞 K, x ∈ v₁.asIdeal ∧ x ∉ v₂.asIdeal := by
+    by_contra!
+    apply h
+    exact IsDedekindDomain.HeightOneSpectrum.ext_iff.mpr
+      (IsMaximal.eq_of_le (isMaximal v₁) IsPrime.ne_top' this)
+  rcases this with ⟨x, hx1, hx2⟩
+  use x
+  simp only [apply]
+  norm_cast
+  intro h
+  apply hx2
+  have : ‖(embedding v₂) ↑x‖ = 1 := by --make this a theorem
+    rw [norm_def, NNReal.coe_eq_one, WithZeroMulInt.toNNReal_eq_one_iff (v₂.valuation (x : K))
+      (norm_ne_zero v₂) (Ne.symm (ne_of_lt (one_lt_norm v₂))), @valuation_eq_intValuationDef]
+    rw [← @dvd_span_singleton, ← IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
+      at hx2
+    simp_all only [ne_eq, not_lt]
+    apply le_antisymm (IsDedekindDomain.HeightOneSpectrum.intValuation_le_one v₂ x) hx2
+  have : ‖(embedding v₁) ↑x‖ < 1 := by --make this a theorem
+    rw [norm_def, NNReal.coe_lt_one, WithZeroMulInt.toNNReal_lt_one_iff (one_lt_norm v₁),
+      @valuation_eq_intValuationDef,
+      IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
+    exact dvd_span_singleton.mpr hx1
+  linarith
 
 end NumberField.FinitePlace

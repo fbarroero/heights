@@ -209,7 +209,7 @@ theorem Padic_norm_int_le_one (x : 𝓞 K) : PadicNorm P x ≤ 1 := by
     exact zero_le_one' ℝ
   · rw [PadicNorm_def]
     simp only [NNReal.coe_le_one]
-    rw [le_one (one_lt_norm P)]
+    rw [WithZeroMulInt.toNNReal_le_one_iff (one_lt_norm P)]
     exact valuation_le_one P x
 
 namespace PadicNorm
@@ -232,7 +232,7 @@ lemma mul_support_subset_support {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
     exact lt_of_le_of_ne this hP
   rw [PadicNorm_def] at this
   norm_cast at this
-  rw [lt_one (one_lt_norm P),
+  rw [WithZeroMulInt.toNNReal_lt_one_iff (one_lt_norm P),
     IsDedekindDomain.HeightOneSpectrum.valuation_eq_intValuationDef,
     IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd] at this
   norm_cast
@@ -250,8 +250,7 @@ lemma Pow_Dividing_mulSupport_subset_Padic_mulSupport {x : 𝓞 K} (h_x_nezero :
   simp_all only [Function.mem_mulSupport]
   rw [PadicNorm_def]
   norm_cast
-  rw [eq_one _ (Ne.symm (ne_of_lt (one_lt_norm P))) (by simp_all only [ne_eq, map_eq_zero,
-    NoZeroSMulDivisors.algebraMap_eq_zero_iff, not_false_eq_true]),
+  rw [WithZeroMulInt.toNNReal_eq_one_iff _ _ (Ne.symm (ne_of_lt (mod_cast one_lt_norm P))),
     IsDedekindDomain.HeightOneSpectrum.valuation_eq_intValuationDef,
     IsDedekindDomain.HeightOneSpectrum.intValuationDef_if_neg P h_x_nezero]
   norm_cast
