@@ -108,8 +108,31 @@ theorem NumberField.FinitePlace.norm_def (x : K) : ‖(embedding v) x‖ = toNNR
   · subst h
     simp_all only [map_zero, norm_zero, NNReal.coe_zero]
   · --unfold embedding
-    simp [embedding, UniformSpace.Completion.coeRingHom, NormedField.toNorm, instNormedFieldValuedAdicCompletion, Valued.toNormedField, instFieldAdicCompletion, Valued.norm, Valuation.RankOne.hom]
+    simp only [NormedField.toNorm, instNormedFieldValuedAdicCompletion, Valued.toNormedField,
+      instFieldAdicCompletion, Valued.norm, Valuation.RankOne.hom, MonoidWithZeroHom.coe_mk,
+      ZeroHom.coe_mk, embedding, UniformSpace.Completion.coeRingHom, RingHom.coe_mk,
+      MonoidHom.coe_mk, OneHom.coe_mk, Valued.valuedCompletion_apply, NNReal.coe_inj]
     rfl
+
+theorem norm_le_one (x : 𝓞 K) : ‖(embedding v) x‖ ≤ 1 := by
+  rw [NumberField.FinitePlace.norm_def, NNReal.coe_le_one,
+    WithZeroMulInt.toNNReal_le_one_iff (one_lt_norm v)]
+  exact valuation_le_one v x
+
+theorem norm_eq_one_iff_not_mem (x : 𝓞 K) : ‖(embedding v) x‖ = 1 ↔ x ∉ v.asIdeal := by
+  rw [NumberField.FinitePlace.norm_def, NNReal.coe_eq_one,
+    WithZeroMulInt.toNNReal_eq_one_iff (v.valuation (x : K))
+    (norm_ne_zero v) (Ne.symm (ne_of_lt (one_lt_norm v))), @valuation_eq_intValuationDef,
+    ← @dvd_span_singleton, ← IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd, not_lt]
+  exact Iff.symm (LE.le.ge_iff_eq (IsDedekindDomain.HeightOneSpectrum.intValuation_le_one v x))
+
+theorem norm_lt_one_iff_mem (x : 𝓞 K) : ‖(embedding v) x‖ < 1 ↔ x ∈ v.asIdeal := by
+  rw [NumberField.FinitePlace.norm_def, NNReal.coe_lt_one,
+    WithZeroMulInt.toNNReal_lt_one_iff (one_lt_norm v), @valuation_eq_intValuationDef,
+    IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
+  exact dvd_span_singleton
+
+
 
 end FinitePlace
 namespace NumberField.FinitePlace
@@ -167,21 +190,8 @@ theorem mk_eq_iff {v₁ v₂ : IsDedekindDomain.HeightOneSpectrum (𝓞 K)} : mk
   rcases this with ⟨x, hx1, hx2⟩
   use x
   simp only [apply]
-  norm_cast
-  intro h
-  apply hx2
-  have : ‖(embedding v₂) ↑x‖ = 1 := by --make this a theorem
-    rw [norm_def, NNReal.coe_eq_one, WithZeroMulInt.toNNReal_eq_one_iff (v₂.valuation (x : K))
-      (norm_ne_zero v₂) (Ne.symm (ne_of_lt (one_lt_norm v₂))), @valuation_eq_intValuationDef]
-    rw [← @dvd_span_singleton, ← IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
-      at hx2
-    simp_all only [ne_eq, not_lt]
-    apply le_antisymm (IsDedekindDomain.HeightOneSpectrum.intValuation_le_one v₂ x) hx2
-  have : ‖(embedding v₁) ↑x‖ < 1 := by --make this a theorem
-    rw [norm_def, NNReal.coe_lt_one, WithZeroMulInt.toNNReal_lt_one_iff (one_lt_norm v₁),
-      @valuation_eq_intValuationDef,
-      IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
-    exact dvd_span_singleton.mpr hx1
+  rw [← norm_lt_one_iff_mem ] at hx1
+  rw [← norm_eq_one_iff_not_mem] at hx2
   linarith
 
 end NumberField.FinitePlace
