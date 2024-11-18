@@ -2,22 +2,9 @@ import Mathlib.Data.Int.WithZero
 import Mathlib.NumberTheory.NumberField.Basic
 import Mathlib.NumberTheory.NumberField.Embeddings
 import Mathlib.RingTheory.DedekindDomain.AdicValuation
-import Mathlib.RingTheory.Ideal.Norm
+import Mathlib.RingTheory.Ideal.Norm.absNorm
 import Mathlib.Topology.Algebra.Valued.NormedValued
 import Mathlib.FieldTheory.Finite.Basic
-import Heights.WithZero
-
-namespace Ideal
-
-lemma one_lt_absNorm {S : Type u_1} [CommRing S] [Nontrivial S] [IsDedekindDomain S]
-    [Module.Free ℤ S] {I : Ideal S } (hI_ne_top : I ≠ ⊤) (hfin_quot : 0 < absNorm I) :
-    1 < absNorm I := by
-  by_contra! h
-  apply hI_ne_top
-  rw [← absNorm_eq_one_iff]
-  omega
-
-end Ideal
 
 open IsDedekindDomain.HeightOneSpectrum  WithZeroMulInt Ideal NumberField
 
@@ -28,15 +15,18 @@ section absoluteValue
 variable {K : Type*} [Field K] [NumberField K] (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
 
 /-- The norm of a maximal ideal as an element of ℝ≥0 is > 1  -/
-lemma one_lt_norm : 1 < (absNorm (v.asIdeal) : NNReal) := by
+lemma one_lt_norm : 1 < (absNorm v.asIdeal : NNReal) := by
   norm_cast
-  apply one_lt_absNorm (IsPrime.ne_top v.isPrime)
-  refine Nat.pos_iff_ne_zero.mpr ?_
-  rw [absNorm_ne_zero_iff]
-  set k := 𝓞 K ⧸ v.asIdeal
-  have : Field k := Ideal.Quotient.field v.asIdeal
-  have : Fintype k := Ideal.fintypeQuotientOfFreeOfNeBot v.asIdeal v.ne_bot
-  exact Fintype.finite this
+  by_contra! h
+  apply IsPrime.ne_top v.isPrime
+  rw [← absNorm_eq_one_iff]
+  have : 0 < absNorm v.asIdeal := by
+    rw [Nat.pos_iff_ne_zero, absNorm_ne_zero_iff]
+    set k := 𝓞 K ⧸ v.asIdeal
+    have : Field k := Ideal.Quotient.field v.asIdeal
+    have : Fintype k := Ideal.fintypeQuotientOfFreeOfNeBot v.asIdeal v.ne_bot
+    exact Fintype.finite this
+  omega
 
 lemma norm_ne_zero : (absNorm (v.asIdeal) : NNReal) ≠ 0 := ne_zero_of_lt (one_lt_norm v)
 
@@ -63,9 +53,7 @@ theorem vadic_abv_def : vadic_abv v x = (toNNReal (norm_ne_zero v) (v.valuation 
 
 end absoluteValue
 
-
 end NumberField
-
 
 section FinitePlace
 variable {K : Type*} [Field K] [NumberField K] (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
@@ -131,8 +119,6 @@ theorem norm_lt_one_iff_mem (x : 𝓞 K) : ‖(embedding v) x‖ < 1 ↔ x ∈ v
     WithZeroMulInt.toNNReal_lt_one_iff (one_lt_norm v), @valuation_eq_intValuationDef,
     IsDedekindDomain.HeightOneSpectrum.intValuation_lt_one_iff_dvd]
   exact dvd_span_singleton
-
-
 
 end FinitePlace
 namespace NumberField.FinitePlace

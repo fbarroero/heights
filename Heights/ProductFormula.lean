@@ -8,7 +8,7 @@ import Mathlib.NumberTheory.NumberField.Embeddings
 import Mathlib.NumberTheory.Ostrowski
 import Mathlib.RingTheory.DedekindDomain.AdicValuation
 import Mathlib.RingTheory.DedekindDomain.Factorization
-import Mathlib.RingTheory.Ideal.Norm
+import Mathlib.RingTheory.Ideal.Norm.absNorm
 import Mathlib.Tactic.Rify
 import Mathlib.Topology.Algebra.Valued.NormedValued
 import Mathlib.FieldTheory.Finite.Basic
@@ -296,9 +296,9 @@ theorem product_formula_int {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
 theorem product_formula_finite {x : K} (h_x_nezero : x ≠ 0) :
     ∏ᶠ P : IsDedekindDomain.HeightOneSpectrum (𝓞 K), PadicNorm P x = |(Algebra.norm ℚ) x|⁻¹ := by
   --reduce to 𝓞 K
-  have : IsFractionRing (𝓞 K) K := NumberField.RingOfIntegers.instIsFractionRing
+  --have : IsFractionRing (𝓞 K) K := NumberField.RingOfIntegers.instIsFractionRing
   have hfrac : ∃ a b : 𝓞 K, b ≠ 0 ∧  x = a / b := by
-    rcases @IsFractionRing.div_surjective (𝓞 K) _ _ K _ _ _ x with ⟨a, b, _, hfrac⟩
+    rcases @IsFractionRing.div_surjective (𝓞 K) _ K _ _ _ x with ⟨a, b, _, hfrac⟩
     use a, b
     subst hfrac
     simp_all only [ne_eq, div_eq_zero_iff, NoZeroSMulDivisors.algebraMap_eq_zero_iff, not_or, not_false_eq_true,
