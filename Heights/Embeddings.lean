@@ -1,10 +1,11 @@
 import Mathlib.Data.Int.WithZero
+import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.NumberTheory.NumberField.Basic
 import Mathlib.NumberTheory.NumberField.Embeddings
 import Mathlib.RingTheory.DedekindDomain.AdicValuation
+import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.Ideal.Norm.absNorm
 import Mathlib.Topology.Algebra.Valued.NormedValued
-import Mathlib.FieldTheory.Finite.Basic
 
 open IsDedekindDomain.HeightOneSpectrum  WithZeroMulInt Ideal NumberField
 
@@ -179,5 +180,32 @@ theorem mk_eq_iff {v₁ v₂ : IsDedekindDomain.HeightOneSpectrum (𝓞 K)} : mk
   rw [← norm_lt_one_iff_mem ] at hx1
   rw [← norm_eq_one_iff_not_mem] at hx2
   linarith
+
+theorem mulSupport_Finite {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
+    (Function.mulSupport fun w : FinitePlace K => w x).Finite := by
+  have (w : FinitePlace K) : w x ≠ 1 ↔ w x < 1 := by
+    sorry
+  simp_rw [Function.mulSupport, this, ← norm_embedding_eq, norm_lt_one_iff_mem,
+    ← Ideal.dvd_span_singleton]
+  have h : {v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ span {x}}.Finite := by
+    apply Ideal.finite_factors
+    simp_all only [ne_eq, ne_iff_lt_iff_le, Submodule.zero_eq_bot, span_singleton_eq_bot, not_false_eq_true]
+  have h_inj : Set.InjOn (fun w : FinitePlace K ↦ maximal_ideal w) {x_1 | x_1.maximal_ideal.asIdeal ∣ span {x}} := by
+    refine Function.Injective.injOn ?h
+    intro w₁ w₂
+    simp only
+    intro h
+    rw [← mk_max_ideal w₁, ← mk_max_ideal w₂]
+    exact congrArg mk h
+  apply Set.Finite.of_finite_image _ h_inj
+  have h_subs : ((fun (w : FinitePlace K) ↦ w.maximal_ideal) '' {x_1 : FinitePlace K | x_1.maximal_ideal.asIdeal ∣ span {x}}) ⊆ { v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ span {x}} := by
+    intro w h
+    simp_all only [ne_eq, ne_iff_lt_iff_le, dvd_span_singleton, Set.mem_image, Set.mem_setOf_eq]
+    obtain ⟨w_1, h⟩ := h
+    obtain ⟨left, right⟩ := h
+    subst right
+    simp_all only
+  apply Set.Finite.subset _ h_subs
+  exact h
 
 end NumberField.FinitePlace
