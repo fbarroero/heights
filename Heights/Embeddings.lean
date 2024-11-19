@@ -181,10 +181,15 @@ theorem mk_eq_iff {v₁ v₂ : IsDedekindDomain.HeightOneSpectrum (𝓞 K)} : mk
   rw [← norm_eq_one_iff_not_mem] at hx2
   linarith
 
+theorem max_ideal_mk (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) : maximal_ideal (mk v) = v := by
+  rw [← mk_eq_iff, mk_max_ideal]
+
 theorem mulSupport_Finite {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
     (Function.mulSupport fun w : FinitePlace K => w x).Finite := by
   have (w : FinitePlace K) : w x ≠ 1 ↔ w x < 1 := by
-    sorry
+    have := norm_le_one w.maximal_ideal x
+    rw [norm_embedding_eq] at this
+    exact Decidable.ne_iff_lt_iff_le.mpr this
   simp_rw [Function.mulSupport, this, ← norm_embedding_eq, norm_lt_one_iff_mem,
     ← Ideal.dvd_span_singleton]
   have h : {v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ span {x}}.Finite := by
@@ -207,5 +212,7 @@ theorem mulSupport_Finite {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
     simp_all only
   apply Set.Finite.subset _ h_subs
   exact h
+
+--def support {x : 𝓞 K} (h_x_nezero : x ≠ 0) : Set (FinitePlace K) :=
 
 end NumberField.FinitePlace
