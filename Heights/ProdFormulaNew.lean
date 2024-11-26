@@ -8,17 +8,13 @@ open FinitePlace IsDedekindDomain
 
 theorem product_formula_int {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
     ∏ᶠ w : FinitePlace K, w x = (|(Algebra.norm ℤ) x| : ℝ)⁻¹ := by
-  have : ∏ᶠ w : FinitePlace K, w x = ∏ᶠ P : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding P) ↑x‖ := by
+  have : ∏ᶠ w : FinitePlace K, w x = ∏ᶠ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K), ‖(embedding v) ↑x‖ := by
     refine finprod_eq_of_bijective (fun a ↦ a.maximal_ideal) ?he₀ (fun w ↦ Eq.symm (norm_embedding_eq w ↑x) )
     rw [Function.bijective_iff_existsUnique]
     intro v
-    use NumberField.FinitePlace.mk v
-    constructor
-    · simp only
-      rw [NumberField.FinitePlace.max_ideal_mk]
-    · intro y a
-      subst a
-      simp_all only [ne_eq, mk_max_ideal]
+    refine ⟨NumberField.FinitePlace.mk v, max_ideal_mk v, ?_⟩
+    intro y a
+    simp only [← a, mk_max_ideal y]
   rw [this]
   apply Eq.symm (inv_eq_of_mul_eq_one_left _)
   norm_cast
@@ -31,8 +27,26 @@ theorem product_formula_int {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
     simp_rw [← Ideal.dvd_span_singleton]
     exact Ideal.finite_factors h_span_nezero
   let s : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 K)) := Set.Finite.toFinset h_fin
+  let t₁ := (Function.mulSupport fun v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) ↦ ‖(embedding v) ↑x‖)
+  let t₂ := (Function.mulSupport fun v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) ↦ v.maxPowDividing (Ideal.span {x}))
+  have h_fin₁ : t₁.Finite := by
+    sorry
+  have h_fin₂ : t₂.Finite := by sorry
+  have h_sub₁ : h_fin₁.toFinset ⊆ s := by sorry
+  have h_sub₂ : h_fin₂.toFinset ⊆ s := by sorry
+  rw [finprod_eq_prod_of_mulSupport_toFinset_subset (s:=s) _ h_fin₁ h_sub₁,
+    finprod_eq_prod_of_mulSupport_toFinset_subset (s:=s) _ h_fin₂ h_sub₂, map_prod]
+  push_cast
+  rw [← Finset.prod_mul_distrib]
+  apply Finset.prod_eq_one
+  intro v _
+  rw [IsDedekindDomain.HeightOneSpectrum.maxPowDividing]
+  simp only [map_pow, Nat.cast_pow]
 
   sorry
+
+
+
 
 theorem product_formula_finite {x : K} (h_x_nezero : x ≠ 0) :
     ∏ᶠ w : FinitePlace K, w x = |(Algebra.norm ℚ) x|⁻¹ := by
