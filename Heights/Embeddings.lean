@@ -32,14 +32,10 @@ lemma one_lt_norm : 1 < (absNorm v.asIdeal : NNReal) := by
 lemma norm_ne_zero : (absNorm (v.asIdeal) : NNReal) ≠ 0 := ne_zero_of_lt (one_lt_norm v)
 
 noncomputable def vadic_abv : AbsoluteValue K ℝ where
-  toFun := fun x ↦ (toNNReal (norm_ne_zero v) (v.valuation x))
-  map_mul' := by
-    intro x y
-    simp_all only [_root_.map_mul, NNReal.coe_mul]
-  nonneg' := fun x ↦ NNReal.zero_le_coe
-  eq_zero' := by
-    intro x
-    simp_all only [NNReal.coe_eq_zero, map_eq_zero]
+  toFun := fun x ↦ toNNReal (norm_ne_zero v) (v.valuation x)
+  map_mul' := fun _ _ ↦ by simp_all only [_root_.map_mul, NNReal.coe_mul]
+  nonneg' := fun _ ↦ NNReal.zero_le_coe
+  eq_zero' := fun _ ↦ by simp_all only [NNReal.coe_eq_zero, map_eq_zero]
   add_le' := by
     intro x y
     simp only
@@ -50,7 +46,7 @@ noncomputable def vadic_abv : AbsoluteValue K ℝ where
     rw [← Monotone.map_max h_mono] --max goes inside withZeroMultIntToNNReal
     exact h_mono (Valuation.map_add v.valuation x y)
 
-theorem vadic_abv_def : vadic_abv v x = (toNNReal (norm_ne_zero v) (v.valuation x)) := rfl
+theorem vadic_abv_def : vadic_abv v x = toNNReal (norm_ne_zero v) (v.valuation x) := rfl
 
 end absoluteValue
 
@@ -123,7 +119,6 @@ theorem norm_lt_one_iff_mem (x : 𝓞 K) : ‖(embedding v) x‖ < 1 ↔ x ∈ v
 
 end FinitePlace
 namespace NumberField.FinitePlace
-open NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 instance : FunLike (FinitePlace K) K ℝ where
@@ -212,7 +207,5 @@ theorem mulSupport_Finite {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
     simp_all only
   apply Set.Finite.subset _ h_subs
   exact h
-
---def support {x : 𝓞 K} (h_x_nezero : x ≠ 0) : Set (FinitePlace K) :=
 
 end NumberField.FinitePlace
