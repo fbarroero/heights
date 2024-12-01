@@ -1,4 +1,4 @@
-import Heights.Embeddings
+import Heights.FinitePlaces
 
 open Classical
 
@@ -133,9 +133,9 @@ theorem FinitePlace.prod_eq_inv_abs_norm_int {x : 𝓞 K} (h_x_nezero : x ≠ 0)
     finprod_eq_prod_of_mulSupport_toFinset_subset (s:=s) _ h_fin₂ h_sub₂, map_prod, Nat.cast_prod,
     ← Finset.prod_mul_distrib, Finset.prod_eq_one]
   intro v _
-  rw [maxPowDividing, map_pow, Nat.cast_pow, norm_def, WithZeroMulInt.toNNReal_neg_apply _
-    ((Valuation.ne_zero_iff v.valuation).mpr (RingOfIntegers.coe_ne_zero_iff.mpr h_x_nezero)),
-    Ideal.absNorm_apply, Submodule.cardQuot_apply]
+  rw [maxPowDividing, map_pow, Nat.cast_pow, norm_def, vadic_abv, AbsoluteValue.coe_mk,
+    MulHom.coe_mk, WithZeroMulInt.toNNReal_neg_apply _ ((Valuation.ne_zero_iff v.valuation).mpr
+    (RingOfIntegers.coe_ne_zero_iff.mpr h_x_nezero)), Ideal.absNorm_apply, Submodule.cardQuot_apply]
   push_cast
   rw [← Real.rpow_natCast, ← Real.rpow_intCast, ← Real.rpow_add (mod_cast Nat.zero_lt_of_lt
     (mod_cast one_lt_norm v))]
@@ -159,8 +159,8 @@ theorem FinitePlace.prod_eq_inv_abs_norm {x : K} (h_x_nezero : x ≠ 0) :
   have ha : a ≠ 0 := by
     simp_all only [ne_eq, div_eq_zero_iff, NoZeroSMulDivisors.algebraMap_eq_zero_iff, or_false,
       not_false_eq_true]
-  simp_rw [hx, map_div₀, Rat.cast_inv, Rat.cast_abs, finprod_div_distrib (mulSupport_Finite ha)
-    (mulSupport_Finite hb), prod_eq_inv_abs_norm_int ha, prod_eq_inv_abs_norm_int hb,
+  simp_rw [hx, map_div₀, Rat.cast_inv, Rat.cast_abs, finprod_div_distrib (mulSupport_Finite_int ha)
+    (mulSupport_Finite_int hb), prod_eq_inv_abs_norm_int ha, prod_eq_inv_abs_norm_int hb,
     ← inv_eq_iff_eq_inv, div_inv_eq_mul, mul_inv_rev, inv_inv, inv_mul_eq_div, ← abs_div]
   congr
   apply Eq.symm (eq_div_of_mul_eq (by simp_all only [hx, ne_eq, div_eq_zero_iff,
