@@ -2,7 +2,10 @@ import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Algebra.Polynomial.Degree.Definitions
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Tactic.ComputeDegree
 
 namespace Polynomial
@@ -68,11 +71,34 @@ theorem MM_mul (p q : Polynomial ℂ) : MahlerMeasure (p * q) = MahlerMeasure p 
       rw [roots_mul (mul_ne_zero hp hq)]
       simp only [Multiset.map_add, Multiset.prod_add]
 
-theorem bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℤ} {B : NNReal}
-    (h_bdd : ∀ n, ‖(map coe p).coeff n‖₊ ≤ B) :
-    (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) (map coe p).roots).sup ≤ B := by --change const on the right accordingly
+theorem bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℤ} (h₀ : p ≠ 0) {B : NNReal}
+    (h_bdd : (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) (map coe p).roots).sup ≤ B) :
+    ∀ n, ‖(map coe p).coeff n‖₊ ≤ Nat.choose p.natDegree n * B * ‖p.leadingCoeff‖₊ := by --change const on the right accordingly?
+  simp_all only [Multiset.sup_le, Multiset.mem_map, mem_roots', IsRoot.def,
+    forall_exists_index, and_imp, eq_intCast, Complex.nnnorm_intCast]
+  have h_deg_eq : (map coe p).natDegree = p.natDegree := by
+    rw [natDegree_map_eq_iff]
+    left
+    simp_all only [ne_eq, eq_intCast, Int.cast_eq_zero, leadingCoeff_eq_zero, not_false_eq_true]
+  have h_lead_eq : (map coe p).leadingCoeff = p.leadingCoeff := by
+    simp only [leadingCoeff, coeff_map, eq_intCast, ← h_deg_eq]
+  have : p.leadingCoeff ≠ 0  := by exact leadingCoeff_ne_zero.mpr h₀
+  intro n
+  by_cases h : p.natDegree < n; simp_all only [← h_deg_eq, coeff_map,
+    coeff_eq_zero_of_natDegree_lt h, eq_intCast, Int.cast_zero, nnnorm_zero, zero_le]
+  simp only [not_lt, ← h_deg_eq] at h
+  rw [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits_codomain (map coe p))) h]
+  simp only [h_lead_eq, nnnorm_mul, Complex.nnnorm_intCast, nnnorm_pow, nnnorm_neg, nnnorm_one,
+    one_pow, mul_one]
+  rw [mul_comm]
+  simp_all only [ne_eq, natDegree_map_eq_iff, eq_intCast, Int.cast_eq_zero, not_false_eq_true, true_or,
+    leadingCoeff_eq_zero, nnnorm_pos, mul_le_mul_right]
+  simp only [Multiset.esymm]
+  rw [Finset.sum_multiset_map_count]
+  simp only [nsmul_eq_mul]
 
   sorry
+
 
 theorem Kronecker {p : Polynomial ℤ} (h_monic : Monic p) (h_irr : Irreducible p)
     (h_MM : MahlerMeasure (map coe p) = 1) : p = X ∨ ∃ n : ℕ, p = cyclotomic n ℤ := by
