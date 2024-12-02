@@ -7,28 +7,27 @@ import Mathlib.Tactic.ComputeDegree
 
 namespace Polynomial
 
-noncomputable def MahlerMeasure (p : Polynomial ℂ) := ‖leadingCoeff p‖ *
+noncomputable def MahlerMeasure (p : Polynomial ℂ) := ‖leadingCoeff p‖₊ *
     (Multiset.map (fun (a : ℂ) ↦ max 1 ‖a‖₊) p.roots).prod
 
 --instance : FunLike (FinitePlace K) K ℝ where
 
 @[simp]
 theorem MM_zero : MahlerMeasure 0 = 0 := by
-  simp only [MahlerMeasure, leadingCoeff_zero, norm_zero, roots_zero, Multiset.map_zero,
-    Multiset.prod_zero, NNReal.coe_one, mul_one]
+  simp only [MahlerMeasure, leadingCoeff_zero, nnnorm_zero, roots_zero, Multiset.map_zero,
+    Multiset.prod_zero, mul_one]
 
 @[simp]
-theorem MM_const (z : ℂ) : MahlerMeasure (C z) = ‖z‖ := by
-  simp only [MahlerMeasure, leadingCoeff_C, Complex.norm_eq_abs, roots_C, Multiset.map_zero,
-    Multiset.prod_zero, NNReal.coe_one, mul_one]
+theorem MM_const (z : ℂ) : MahlerMeasure (C z) = ‖z‖₊ := by
+  simp only [MahlerMeasure, leadingCoeff_C, roots_C, Multiset.map_zero, Multiset.prod_zero, mul_one]
 
 @[simp]
 theorem MM_X : MahlerMeasure X = 1 := by
-  simp only [MahlerMeasure, monic_X, Monic.leadingCoeff, norm_one, roots_X, Multiset.map_singleton,
-    nnnorm_zero, zero_le, sup_of_le_left, Multiset.prod_singleton, NNReal.coe_one, mul_one]
+  simp only [MahlerMeasure, monic_X, Monic.leadingCoeff, nnnorm_one, roots_X,
+    Multiset.map_singleton, nnnorm_zero, zero_le, sup_of_le_left, Multiset.prod_singleton, mul_one]
 
 @[simp]
-theorem MM_linear (z₁ z₀ : ℂ) (h1 : z₁ ≠ 0) : MahlerMeasure (C z₁ * X - C z₀) = ‖z₁‖ * max 1 ‖z₀ / z₁‖ := by
+theorem MM_linear (z₁ z₀ : ℂ) (h1 : z₁ ≠ 0) : MahlerMeasure (C z₁ * X - C z₀) = ‖z₁‖₊ * max 1 ‖z₀ / z₁‖₊ := by
   simp only [MahlerMeasure, Complex.norm_eq_abs, norm_div]
   have : (C z₁ * X - C z₀).leadingCoeff = z₁ := by
     rw [leadingCoeff]
@@ -48,27 +47,23 @@ theorem MM_linear (z₁ z₀ : ℂ) (h1 : z₁ ≠ 0) : MahlerMeasure (C z₁ * 
     Complex.norm_eq_abs]
 
 theorem MM_2 : MahlerMeasure (X - C 2) = 2 := by
-  simp only [MahlerMeasure, Complex.norm_eq_abs]
-  have : ((X : ℂ[X]) - C 2).leadingCoeff = 1 := by
-    simp only [leadingCoeff_X_sub_C]
-  rw [this]
-  simp only [AbsoluteValue.map_one, roots_X_sub_C, Multiset.map_singleton, Complex.nnnorm_ofNat,
-    Nat.one_le_ofNat, sup_of_le_right, Multiset.prod_singleton, NNReal.coe_ofNat, one_mul]
+  simp only [MahlerMeasure, leadingCoeff_X_sub_C, nnnorm_one, roots_X_sub_C, Multiset.map_singleton,
+    Complex.nnnorm_ofNat, Nat.one_le_ofNat, sup_of_le_right, Multiset.prod_singleton, one_mul]
 
 theorem MM_mul (p q : Polynomial ℂ) : MahlerMeasure (p * q) = MahlerMeasure p * MahlerMeasure q := by
-  simp only [MahlerMeasure, leadingCoeff_mul, norm_mul, Complex.norm_eq_abs]
+  simp only [MahlerMeasure, leadingCoeff_mul, nnnorm_mul]
   rw [mul_assoc, mul_assoc, mul_eq_mul_left_iff]
   norm_cast
-  rw[mul_left_comm (Multiset.map NNReal.toReal (Multiset.map (fun x ↦ 1 ⊔ ‖x‖₊) p.roots)).prod
-    (Complex.abs q.leadingCoeff) _]
+  rw[mul_left_comm (Multiset.map (fun x ↦ 1 ⊔ ‖x‖₊) p.roots).prod
+    _ _]
   simp only [mul_eq_mul_left_iff, map_eq_zero, leadingCoeff_eq_zero]
   by_cases hp : p = 0
   · simp only [hp, zero_mul, roots_zero, Multiset.map_zero, Multiset.prod_zero, one_mul,
-    _root_.map_eq_zero, leadingCoeff_eq_zero, leadingCoeff_zero, AbsoluteValue.map_zero, or_true]
+    nnnorm_eq_zero, leadingCoeff_eq_zero, leadingCoeff_zero, nnnorm_zero, or_true]
   · left
     by_cases hq : q = 0
     · simp only [hq, mul_zero, roots_zero, Multiset.map_zero, Multiset.prod_zero, mul_one,
-      leadingCoeff_zero, AbsoluteValue.map_zero, or_true]
+      leadingCoeff_zero, nnnorm_zero, or_true]
     · left
       rw [roots_mul (mul_ne_zero hp hq)]
       simp only [Multiset.map_add, Multiset.prod_add]
