@@ -8,6 +8,7 @@ import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Tactic.ComputeDegree
+import Mathlib
 
 namespace Polynomial
 
@@ -73,8 +74,47 @@ theorem MM_mul (p q : Polynomial ℂ) : MahlerMeasure (p * q) = MahlerMeasure p 
       rw [roots_mul (mul_ne_zero hp hq)]
       simp only [Multiset.map_add, Multiset.prod_add]
 
+theorem bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℂ} (h₀ : p ≠ 0) {B : NNReal}
+    (h_bdd : (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) p.roots).sup ≤ B) :
+    ∀ n, ‖p.coeff n‖₊ ≤ Nat.choose p.natDegree n * B ^ (p.natDegree - n) * ‖p.leadingCoeff‖₊ := by
+  intro n
+  simp_all only [Multiset.sup_le, Multiset.mem_map, mem_roots', not_false_eq_true, IsRoot.def, true_and,
+    forall_exists_index]
+  have : p.leadingCoeff ≠ 0  := leadingCoeff_ne_zero.mpr h₀
+  by_cases h : p.natDegree < n; simp only [coeff_eq_zero_of_natDegree_lt h, nnnorm_zero, zero_le]
+  rw [not_lt] at h
+  simp only [coeff_eq_esymm_roots_of_card
+    (splits_iff_card_roots.mp (IsAlgClosed.splits_codomain  p)) h, mul_comm _ ‖p.leadingCoeff‖₊,
+    nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one, one_pow, mul_one, ge_iff_le, mul_le_mul_left,
+    nnnorm_pos.mpr this, Multiset.esymm, Finset.sum_multiset_map_count, nsmul_eq_mul]
+  apply le_trans (norm_sum_le _ _)
+  simp only [norm_mul, Complex.norm_natCast, Complex.norm_eq_abs, NNReal.val_eq_coe, NNReal.coe_mul,
+    NNReal.coe_natCast, Finset.prod_multiset_count, Complex.abs_natCast, map_prod,
+    AbsoluteValue.map_pow, NNReal.coe_pow]
+  have : ∀ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset, ∀ z ∈ x.toFinset, ‖z‖₊ ≤ B := by
+    intro x hx z hz
+    apply h_bdd ‖z‖₊ z
+    simp_all only [ne_eq, not_false_eq_true, true_and, and_imp, forall_apply_eq_imp_iff₂,
+      leadingCoeff_eq_zero, Multiset.mem_toFinset, Multiset.mem_powersetCard, and_true]
+    obtain ⟨left, right⟩ := hx
+    have : z ∈ p.roots := Multiset.mem_of_le left hz
+    simp only [mem_roots', ne_eq, IsRoot.def] at this
+    exact this.2
+  calc
+  ∑ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset,
+    ↑(Multiset.count x (Multiset.powersetCard (p.natDegree - n) p.roots)) *
+      ∏ x_1 ∈ x.toFinset, Complex.abs x_1 ^ Multiset.count x_1 x ≤
+  ∑ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset,
+    ↑(Multiset.count x (Multiset.powersetCard (p.natDegree - n) p.roots)) *
+      ∏ x_1 ∈ x.toFinset, (B : ℝ) ^ Multiset.count x_1 x := by
+      gcongr
+     -- exact this i✝ a✝ i✝¹ a✝¹
+      sorry
+  _ ≤ ↑(p.natDegree.choose n) * ↑B ^ (p.natDegree - n) := by sorry
+
+
 --change to complex poly
-theorem bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℤ} (h₀ : p ≠ 0) {B : NNReal}
+theorem bdd_coeff_of_bdd_roots_and_lead' {p : Polynomial ℤ} (h₀ : p ≠ 0) {B : NNReal}
     (h_bdd : (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) (map coe p).roots).sup ≤ B) :
     ∀ n, ‖(map coe p).coeff n‖₊ ≤ Nat.choose p.natDegree n * B * ‖p.leadingCoeff‖₊ := by --change const on the right accordingly?
   simp_all only [Multiset.sup_le, Multiset.mem_map, mem_roots', IsRoot.def,
@@ -99,6 +139,8 @@ theorem bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℤ} (h₀ : p ≠ 0) {B
   simp only [Multiset.esymm]
   rw [Finset.sum_multiset_map_count]
   simp only [nsmul_eq_mul]
+
+
   have := (norm_sum_le (E:=ℂ) ((Multiset.powersetCard (p.natDegree - n) (map coe p).roots).toFinset)) (fun x ↦ ↑(Multiset.count x (Multiset.powersetCard (p.natDegree - n) (map coe p).roots)) * x.prod)
   apply le_trans this
   simp only [norm_mul, Complex.norm_natCast, NNReal.val_eq_coe, NNReal.coe_mul,
