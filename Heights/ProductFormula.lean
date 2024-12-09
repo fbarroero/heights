@@ -1,4 +1,5 @@
 import Heights.FinitePlaces
+import Mathlib.LinearAlgebra.Projectivization.Basic
 
 open Classical
 
@@ -56,75 +57,40 @@ theorem foo {x : R} (h_x_nezero : x ≠ 0) :
 
 end Ideal
  -/
+
+
 namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-open FinitePlace IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
+open Algebra FinitePlace Function Ideal IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
 theorem FinitePlace.prod_eq_inv_abs_norm_int {x : 𝓞 K} (h_x_nezero : x ≠ 0) :
-    ∏ᶠ w : FinitePlace K, w x = (|(Algebra.norm ℤ) x| : ℝ)⁻¹ := by
-  have : ∏ᶠ w : FinitePlace K, w x = ∏ᶠ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K),
-      ‖(embedding v) x‖ := by
-    refine finprod_eq_of_bijective (fun a ↦ a.maximal_ideal) ?_
-      (fun w ↦ Eq.symm (norm_embedding_eq w x))
-    rw [Function.bijective_iff_existsUnique]
-    exact fun v ↦ ⟨mk v, max_ideal_mk v, fun _ a ↦ by rw [← a, mk_max_ideal]⟩
-  rw [this]
+    ∏ᶠ w : FinitePlace K, w x = (|norm ℤ x| : ℝ)⁻¹ := by
+  convert_to ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖embedding v x‖ = |↑(norm ℤ x)|⁻¹
+  exact (finprod_eq_of_bijective maximal_ideal ((bijective_iff_existsUnique _).mpr
+    <| fun v ↦ ⟨mk v, max_ideal_mk v, fun _ a ↦ by rw [← a, mk_max_ideal]⟩)
+    (fun w ↦ Eq.symm (norm_embedding_eq w (x : K))))
   apply Eq.symm (inv_eq_of_mul_eq_one_left _)
   norm_cast
-  have h_span_nezero : Ideal.span {x} ≠ 0 := by
-    simp_all only [ne_eq, Submodule.zero_eq_bot, Ideal.span_singleton_eq_bot, not_false_eq_true]
+  have h_span_nezero : span {x} ≠ 0 := by
+    simp_all only [ne_eq, Submodule.zero_eq_bot, span_singleton_eq_bot, not_false_eq_true]
   let t₀ := {v : HeightOneSpectrum (𝓞 K) | x ∈ v.asIdeal}
   have h_fin₀ : t₀.Finite := by
-    simp_rw [t₀, ← Ideal.dvd_span_singleton]
-    exact Ideal.finite_factors h_span_nezero
-  let s : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 K)) := Set.Finite.toFinset h_fin₀
-  let t₁ := (Function.mulSupport fun v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) ↦
-    ‖(embedding v) ↑x‖)
-  let t₂ := (Function.mulSupport fun v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) ↦
-    v.maxPowDividing (Ideal.span {x}))
-  have h_subs₁ : t₁ ⊆ t₀ := by
-    simp only [Function.mulSupport_subset_iff, ne_eq, Set.mem_setOf_eq, t₁, t₀]
-    intro v
-    contrapose!
-    exact (norm_eq_one_iff_not_mem v x).mpr
+    simp only [← dvd_span_singleton, finite_factors h_span_nezero, t₀]
+  let s : Finset (HeightOneSpectrum (𝓞 K)) := h_fin₀.toFinset
+  let t₁ := (fun v : HeightOneSpectrum (𝓞 K) ↦ ‖(embedding v) x‖).mulSupport
+  let t₂ := (fun v : HeightOneSpectrum (𝓞 K) ↦ v.maxPowDividing (span {x})).mulSupport
+  have h_subs₁ : t₁ ⊆ t₀ := fun _ ↦ by simp [t₁, t₀, norm_eq_one_iff_not_mem]
   have h_subs₂ : t₂ ⊆ t₀ := by
-    simp only [Function.mulSupport_subset_iff, Set.mem_setOf_eq, t₂, t₀, maxPowDividing, Ideal.one_eq_top]
-    intro v
-    contrapose!
-    intro hv
-    have h : ⊤ = v.asIdeal ^ 0:= by
-      rw [pow_zero]
-      exact Eq.symm Ideal.one_eq_top
-    rw [h]
-    congr
-    by_contra!
-    apply hv
-    rw [Associates.count_ne_zero_iff_dvd h_span_nezero (irreducible v)] at this
-    exact Ideal.dvd_span_singleton.mp this
-/-
-  have h_subs₂' : t₂ ⊆ t₁ := by
-    simp only [Function.mulSupport_subset_iff, ne_eq, Set.mem_setOf_eq, t₂, t₁, maxPowDividing,
-      Ideal.one_eq_top, Function.mem_mulSupport, ne_eq]
-    intro v
-    contrapose!
-    rw [norm_def, WithZeroMulInt.toNNReal_neg_apply _
-    (by
-      simp only [ne_eq, map_eq_zero, NoZeroSMulDivisors.algebraMap_eq_zero_iff]
-      exact h_x_nezero),
-    Ideal.absNorm_apply, Submodule.cardQuot_apply]
-    push_cast
-    rw [zpow_eq_one_iff_right₀ (Nat.cast_nonneg' (Nat.card (𝓞 K ⧸ v.asIdeal)))
-    (by exact Ne.symm (ne_of_lt (one_lt_norm v)))]
-    simp_rw [valuation_eq_intValuationDef v x, intValuationDef_if_neg v h_x_nezero]
-    simp only [ofAdd_neg, WithZero.coe_inv, WithZero.unzero_coe, toAdd_inv, toAdd_ofAdd,
-      neg_eq_zero, Nat.cast_eq_zero]
-    intro hv
-    rw [hv]
-    simp only [pow_zero, Ideal.one_eq_top] -/
-  have h_fin₁ : t₁.Finite := Set.Finite.subset h_fin₀ h_subs₁
-  have h_fin₂ : t₂.Finite := Set.Finite.subset h_fin₀ h_subs₂
+    simp only [Set.le_eq_subset, mulSupport_subset_iff, Set.mem_setOf_eq, t₂, t₀,
+      maxPowDividing, ← dvd_span_singleton]
+    intro v hv
+    rw [← pow_zero v.asIdeal] at hv
+    replace hv := fun h ↦ hv (congrArg (HPow.hPow v.asIdeal) h)
+    rwa [imp_false, ← ne_eq, Associates.count_ne_zero_iff_dvd h_span_nezero (irreducible v)] at hv
+  have h_fin₁ : t₁.Finite := h_fin₀.subset h_subs₁
+  have h_fin₂ : t₂.Finite := h_fin₀.subset h_subs₂
   have h_sub₁ : h_fin₁.toFinset ⊆ s := Set.Finite.toFinset_subset_toFinset.mpr h_subs₁
   have h_sub₂ : h_fin₂.toFinset ⊆ s := Set.Finite.toFinset_subset_toFinset.mpr h_subs₂
   rw [Int.abs_eq_natAbs, ← Ideal.absNorm_span_singleton,
@@ -133,8 +99,9 @@ theorem FinitePlace.prod_eq_inv_abs_norm_int {x : 𝓞 K} (h_x_nezero : x ≠ 0)
     finprod_eq_prod_of_mulSupport_toFinset_subset (s:=s) _ h_fin₂ h_sub₂, map_prod, Nat.cast_prod,
     ← Finset.prod_mul_distrib, Finset.prod_eq_one]
   intro v _
-  rw [maxPowDividing, map_pow, Nat.cast_pow, norm_def, vadic_abv, AbsoluteValue.coe_mk,
-    MulHom.coe_mk, WithZeroMulInt.toNNReal_neg_apply _ ((Valuation.ne_zero_iff v.valuation).mpr
+  --rivedere dopo merge
+  rw [maxPowDividing, map_pow, Nat.cast_pow, norm_def, vadic_abv_def,
+    WithZeroMulInt.toNNReal_neg_apply _ ((Valuation.ne_zero_iff v.valuation).mpr
     (RingOfIntegers.coe_ne_zero_iff.mpr h_x_nezero)), Ideal.absNorm_apply, Submodule.cardQuot_apply]
   push_cast
   rw [← Real.rpow_natCast, ← Real.rpow_intCast, ← Real.rpow_add (mod_cast Nat.zero_lt_of_lt
@@ -167,10 +134,59 @@ theorem FinitePlace.prod_eq_inv_abs_norm {x : K} (h_x_nezero : x ≠ 0) :
   rw [Algebra.coe_norm_int a, Algebra.coe_norm_int b, ← MonoidHom.map_mul, div_mul_cancel₀]
   exact RingOfIntegers.coe_ne_zero_iff.mpr hb
 
-theorem product_formula {x : K} (h_x_nezero : x ≠ 0) :
+theorem product_places_eq_one {x : K} (h_x_nezero : x ≠ 0) :
     (∏ w : InfinitePlace K, w x ^ w.mult) * ∏ᶠ w : FinitePlace K, w x = 1 := by
   simp_all only [FinitePlace.prod_eq_inv_abs_norm h_x_nezero, InfinitePlace.prod_eq_abs_norm,
     ne_eq, Rat.cast_abs, Rat.cast_inv, isUnit_iff_ne_zero, abs_eq_zero, Rat.cast_eq_zero,
     Algebra.norm_eq_zero_iff, not_false_eq_true, IsUnit.mul_inv_cancel]
+
+open LinearAlgebra.Projectivization
+
+--#check ℙ K (Fin 2 → K)
+
+--variable (v w : Fin 2 → K)
+
+
+
+noncomputable def HeightProj {n : ℕ} : ℙ K (Fin n → K) → ℝ := by
+  by_cases h_n : n = 0; exact fun x ↦ (1 : ℝ)
+  let supinf : (w : InfinitePlace K) → (Fin n → K) → NNReal :=
+    fun w x ↦ Finset.univ.sup (fun i : Fin n ↦ (w (x i)).toNNReal ^ w.mult)
+  let supfin : (w : FinitePlace K) → (Fin n → K) → NNReal :=
+    fun w x ↦ Finset.univ.sup (fun i : Fin n ↦ (w (x i)).toNNReal)
+  have hinf (t : K) (w : InfinitePlace K) (x : Fin n → K) : supinf w (t • x) = (w t).toNNReal ^ w.mult * supinf w x := by
+    simp only [Pi.smul_apply, smul_eq_mul, _root_.map_mul, supinf, NNReal.mul_finset_sup]
+    conv => lhs; rhs; simp only [apply_nonneg, Real.toNNReal_mul, mul_pow]
+  have hfin (t : K) (w : FinitePlace K) (x : Fin n → K) : supfin w (t • x) = (w t).toNNReal * supfin w x := by
+    simp only [Pi.smul_apply, smul_eq_mul, _root_.map_mul, supfin]
+    rw [mul_comm, NNReal.finset_sup_mul]
+    congr
+    ext i
+    simp only [apply_nonneg, Real.toNNReal_mul, NNReal.coe_mul, Real.coe_toNNReal', sup_of_le_left, mul_comm]
+  let f : {v : Fin n → K // v ≠ 0} → ℝ :=
+    fun x ↦ ((∏ w : InfinitePlace K, supinf w x : ℝ) * (∏ᶠ w : FinitePlace K, supfin w x : ℝ)) ^
+    ((Module.finrank ℚ K) : ℝ)⁻¹
+  have hfproj : ∀ (x y : { v : Fin n → K // v ≠ 0 }) (t : K), x = t • (y : Fin n → K) → f x = f y := by
+    intro x y t hxyt
+    have hsupp : (mulSupport fun w ↦ (supfin w y : ℝ)).Finite := by
+
+      sorry
+    have h_t_nezero : t ≠ 0 := by
+      intro h
+      subst h
+      simp only [ne_eq, zero_smul] at hxyt
+      obtain ⟨val, property⟩ := x
+      simp_all only [ne_eq, not_true_eq_false]
+    simp only [ne_eq, NNReal.coe_prod, f, hxyt]
+    congr 1
+    --norm_cast
+    simp_rw [hinf, hfin]
+    norm_cast
+    simp only [NNReal.coe_prod, NNReal.coe_mul, NNReal.coe_pow, Real.coe_toNNReal', apply_nonneg,
+      sup_of_le_left]
+    rw [Finset.prod_mul_distrib, finprod_mul_distrib (mulSupport_Finite h_t_nezero) hsupp, mul_mul_mul_comm,
+      product_places_eq_one h_t_nezero, one_mul]
+  exact Projectivization.lift f hfproj
+
 
 end NumberField
