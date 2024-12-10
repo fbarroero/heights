@@ -115,8 +115,27 @@ open NumberField
 theorem Rat.prod_eq_one {x : ℚ} (h_x_nezero : x ≠ 0) :
     |x| * ∏ᶠ p : Nat.Primes, padicNorm p x = 1 := by
   have hnf := NumberField.prod_eq_one h_x_nezero
-  have h_r (w : NumberField.InfinitePlace ℚ) : w.IsReal := by
-    sorry
-  simp only [infinitePlace_apply, cast_abs, NumberField.InfinitePlace.mult, pow_ite, pow_one,
-    sq_abs] at hnf
+  have hr (w : NumberField.InfinitePlace ℚ) : w.IsReal := by
+    obtain ⟨a, φ, c⟩ := w
+    simp only [InfinitePlace.IsReal]
+    use φ
+    constructor
+    · subst c
+      refine ComplexEmbedding.isReal_iff.mpr ?_
+      simp_all only [ne_eq, infinitePlace_apply, cast_abs]
+      ext x_1 : 1
+      simp_all only [eq_ratCast]
+    · subst c
+      simp_all only [ne_eq, infinitePlace_apply, cast_abs]
+      rfl
+  rw [InfinitePlace.prod_eq_abs_norm] at hnf
+  simp only [cast_abs] at hnf
+  have : (Algebra.norm ℚ) x = x := by
+    have := Algebra.norm_algebraMap (L:=ℚ) x
+    simp only [Algebra.norm_algebraMap (L:=ℚ) x, Algebra.id.map_eq_id, eq_ratCast, cast_eq_id, id_eq, Module.finrank_self,
+      pow_one] at this
+    exact this
+  rw [this] at hnf
+  --let e := fun w : FinitePlace ℚ ↦
+  --finprod_eq_of_bijective
   sorry
