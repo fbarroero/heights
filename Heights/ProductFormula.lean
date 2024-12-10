@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
 import Mathlib.NumberTheory.NumberField.FinitePlaces
+import Mathlib.NumberTheory.Padics.PadicNorm
 
 /-!
 # The Product Formula for number fields
@@ -108,3 +109,14 @@ theorem prod_eq_one {x : K} (h_x_nezero : x ≠ 0) :
     not_false_eq_true, IsUnit.mul_inv_cancel]
 
 end NumberField
+
+open NumberField
+
+theorem Rat.prod_eq_one {x : ℚ} (h_x_nezero : x ≠ 0) :
+    |x| * ∏ᶠ p : Nat.Primes, padicNorm p x = 1 := by
+  have hnf := NumberField.prod_eq_one h_x_nezero
+  have h_r (w : NumberField.InfinitePlace ℚ) : w.IsReal := by
+    sorry
+  simp only [infinitePlace_apply, cast_abs, NumberField.InfinitePlace.mult, pow_ite, pow_one,
+    sq_abs] at hnf
+  sorry
