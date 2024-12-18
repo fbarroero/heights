@@ -136,6 +136,8 @@ theorem Rat.prod_eq_one {x : ℚ} (h_x_nezero : x ≠ 0) :
       pow_one] at this
     exact this
   rw [this] at hnf
-  --let e := fun w : FinitePlace ℚ ↦
+  /-
+  let e := fun w : FinitePlace ℚ ↦ FinitePlace.maximalIdeal w
+  let f : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ) → Nat.Primes := fun P ↦ (P.asIdeal).factorization.support.min' _, -/
   --finprod_eq_of_bijective
   sorry
