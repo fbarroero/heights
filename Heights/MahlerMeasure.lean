@@ -81,7 +81,7 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
     (h_bdd : (Multiset.map (fun (a : K) ↦ ‖a‖₊) p.roots).sup ≤ B) :
     ∀ n, ‖p.coeff n‖₊ ≤ Nat.choose p.natDegree n * B ^ (p.natDegree - n) * ‖p.leadingCoeff‖₊ := by
   intro n
-  have h_lcoeff : p.leadingCoeff ≠ 0  := leadingCoeff_ne_zero.mpr h₀
+  have h_lcoeff : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr h₀
   by_cases h : p.natDegree < n; simp only [coeff_eq_zero_of_natDegree_lt h, nnnorm_zero, zero_le]
   rw [not_lt] at h
   simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits_codomain p))
@@ -141,11 +141,10 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
             rw [← splits_iff_card_roots]
             exact IsAlgClosed.splits p
 
-
 theorem Complex.bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℂ} (h₀ : p ≠ 0) {B : NNReal}
     (h_bdd : (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) p.roots).sup ≤ B) :
     ∀ n, ‖p.coeff n‖₊ ≤ Nat.choose p.natDegree n * B ^ (p.natDegree - n) * ‖p.leadingCoeff‖₊ :=
-  fun _ ↦ Polynomial.bdd_coeff_of_bdd_roots_and_lead h₀ h_bdd _
+  Polynomial.bdd_coeff_of_bdd_roots_and_lead h₀ h_bdd
 
 theorem Kronecker {p : Polynomial ℤ} (h_monic : Monic p) (h_irr : Irreducible p)
     (h_MM : MahlerMeasure (map coe p) = 1) : p = X ∨ ∃ n : ℕ, p = cyclotomic n ℤ := by
@@ -158,17 +157,14 @@ theorem Kronecker {p : Polynomial ℤ} (h_monic : Monic p) (h_irr : Irreducible 
   simp only [map_cyclotomic]
   have : IsPrimitiveRoot (Complex.exp (2 * Real.pi * Complex.I * (1 / p.natDegree))) p.natDegree := by
     rw [Complex.isPrimitiveRoot_iff _ _ h_deg_p]
+    by_cases h_deg_p₁ : p.natDegree = 1
+    · refine ⟨0, by omega, exists_prop.mpr ⟨(Nat.coprime_zero_left p.natDegree).mpr h_deg_p₁, ?_⟩⟩
+      simp only [CharP.cast_eq_zero, h_deg_p₁, Nat.cast_one, div_one, mul_zero, Complex.exp_zero,
+        ne_eq, one_ne_zero, not_false_eq_true, div_self, mul_one, Complex.exp_two_pi_mul_I]
+    · refine ⟨1, by omega, exists_prop.mpr ⟨Nat.gcd_one_left p.natDegree, ?_⟩⟩
+      rw [Nat.cast_one]
+  rw [cyclotomic_eq_prod_X_sub_primitiveRoots this]
 
-    sorry
-
-
-
-
-  rw [cyclotomic_eq_prod_X_sub_primitiveRoots]
-
-  sorry
-
-  sorry
   sorry
 -- https://mathoverflow.net/questions/10911/english-reference-for-a-result-of-kronecker
 
