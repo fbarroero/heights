@@ -10,15 +10,14 @@ import Mathlib.NumberTheory.Padics.PadicNorm
 # The Product Formula for number fields
 In this file we prove the Product Formula for number fields: for any non-zero element `x` of a
 number field `K`, we have `∏|x|ᵥ=1` where the product runs over the equivalence classes of absoulte
-values of `K`.
+values of `K` and the `|⬝|ᵥ` are suitably normalized.
 
 ## Main Results
 * `NumberField.FinitePlace.prod_eq_inv_abs_norm`: for any non-zero element `x` of a number field
 `K`, the product `∏|x|ᵥ` of the absolute values of `x` associated to the finite places of `K` is
 equal to the inverse of the norm of `x`.
-* `NumberField.prod_eq_one`: for any non-zero element `x` of a number field `K`, we have `∏|x|ᵥ=1`
-where the product runs over the equivalence classes of absoulte values of `K`.
-
+* `NumberField.prod_abs_eq_one`: for any non-zero element `x` of a number field `K`, we have
+`∏|x|ᵥ=1` where the product runs over the equivalence classes of absoulte values of `K`.
 
 ## Tags
 number field, embeddings, places, infinite places, finite places, product formula
@@ -49,10 +48,12 @@ theorem FinitePlace.prod_eq_inv_abs_norm_int {x : 𝓞 K} (h_x_nezero : x ≠ 0)
   let t₀ := {v : HeightOneSpectrum (𝓞 K) | x ∈ v.asIdeal}
   have h_fin₀ : t₀.Finite := by
     simp only [← dvd_span_singleton, finite_factors h_span_nezero, t₀]
-  let s : Finset (HeightOneSpectrum (𝓞 K)) := h_fin₀.toFinset
+  let s := h_fin₀.toFinset
   let t₁ := (fun v : HeightOneSpectrum (𝓞 K) ↦ ‖(embedding v) x‖).mulSupport
   let t₂ := (fun v : HeightOneSpectrum (𝓞 K) ↦ v.maxPowDividing (span {x})).mulSupport
-  have h_subs₁ : t₁ ⊆ t₀ := fun _ ↦ by simp [t₁, t₀, norm_eq_one_iff_not_mem]
+  have h_subs₁ : t₁ ⊆ t₀ := by
+    simp only [mulSupport_subset_iff, ne_eq, norm_eq_one_iff_not_mem, Decidable.not_not,
+    Set.mem_setOf_eq, imp_self, implies_true, t₁, t₀]
   have h_subs₂ : t₂ ⊆ t₀ := by
     simp only [Set.le_eq_subset, mulSupport_subset_iff, Set.mem_setOf_eq, t₂, t₀,
       maxPowDividing, ← dvd_span_singleton]
@@ -64,21 +65,21 @@ theorem FinitePlace.prod_eq_inv_abs_norm_int {x : 𝓞 K} (h_x_nezero : x ≠ 0)
   have h_fin₂ : t₂.Finite := h_fin₀.subset h_subs₂
   have h_sub₁ : h_fin₁.toFinset ⊆ s := Set.Finite.toFinset_subset_toFinset.mpr h_subs₁
   have h_sub₂ : h_fin₂.toFinset ⊆ s := Set.Finite.toFinset_subset_toFinset.mpr h_subs₂
-  rw [finprod_eq_prod_of_mulSupport_toFinset_subset (s:=s) _ h_fin₁ h_sub₁,
-    finprod_eq_prod_of_mulSupport_toFinset_subset (s:=s) _ h_fin₂ h_sub₂, map_prod, Nat.cast_prod,
+  rw [finprod_eq_prod_of_mulSupport_toFinset_subset _ h_fin₁ h_sub₁,
+    finprod_eq_prod_of_mulSupport_toFinset_subset _ h_fin₂ h_sub₂, map_prod, Nat.cast_prod,
     ← Finset.prod_mul_distrib, Finset.prod_eq_one]
   intro v _
   rw [maxPowDividing, map_pow, Nat.cast_pow, norm_def, vadicAbv_def,
     WithZeroMulInt.toNNReal_neg_apply _ (v.valuation.ne_zero_iff.mpr
-    (RingOfIntegers.coe_ne_zero_iff.mpr h_x_nezero)), Ideal.absNorm_apply, Submodule.cardQuot_apply]
+    (RingOfIntegers.coe_ne_zero_iff.mpr h_x_nezero))]
   push_cast
   rw [← Real.rpow_natCast, ← Real.rpow_intCast, ← Real.rpow_add (mod_cast Nat.zero_lt_of_lt
     (mod_cast one_lt_norm v))]
   norm_cast
   rw [zpow_eq_one_iff_right₀ (Nat.cast_nonneg' (Nat.card (𝓞 K ⧸ v.asIdeal)))
     (by exact ne_of_gt (one_lt_norm v))]
-  simp only [valuation_eq_intValuationDef v x, intValuationDef_if_neg v h_x_nezero, ofAdd_neg,
-    WithZero.coe_inv, WithZero.unzero_coe, toAdd_inv, toAdd_ofAdd, neg_add_cancel]
+  simp only [valuation_eq_intValuationDef v x, intValuationDef_if_neg v h_x_nezero,
+    WithZero.unzero_coe, toAdd_ofAdd, neg_add_cancel]
 
 /-- For any non-zero `x` in `K`, the prduct of `w x`, where `w` runs over `FinitePlace K`, is
 equal to the inverse of the absolute value of `Algebra.norm ℚ x`. -/
@@ -102,7 +103,7 @@ theorem FinitePlace.prod_eq_inv_abs_norm {x : K} (h_x_nezero : x ≠ 0) :
     (RingOfIntegers.coe_ne_zero_iff.mpr hb)]
 
 /-- The Product Formula for the Number Field `K`. -/
-theorem prod_eq_one {x : K} (h_x_nezero : x ≠ 0) :
+theorem prod_abs_eq_one {x : K} (h_x_nezero : x ≠ 0) :
     (∏ w : InfinitePlace K, w x ^ w.mult) * ∏ᶠ w : FinitePlace K, w x = 1 := by
   simp_all only [prod_eq_inv_abs_norm h_x_nezero, InfinitePlace.prod_eq_abs_norm, ne_eq,
     Rat.cast_inv, isUnit_iff_ne_zero, abs_eq_zero, Rat.cast_eq_zero, norm_eq_zero_iff,
@@ -114,7 +115,7 @@ open NumberField
 
 theorem Rat.prod_eq_one {x : ℚ} (h_x_nezero : x ≠ 0) :
     |x| * ∏ᶠ p : Nat.Primes, padicNorm p x = 1 := by
-  have hnf := NumberField.prod_eq_one h_x_nezero
+  have hnf := NumberField.prod_abs_eq_one h_x_nezero
   have hr (w : NumberField.InfinitePlace ℚ) : w.IsReal := by
     obtain ⟨a, φ, c⟩ := w
     simp only [InfinitePlace.IsReal]
