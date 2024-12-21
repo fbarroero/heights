@@ -59,7 +59,7 @@ noncomputable def HeightProj {n : ℕ} : ℙ K (Fin n → K) → ℝ := by
       · simp_all only [ne_eq, mem_mulSupport, not_false_eq_true, s]
     exact Set.Finite.subset (Set.Finite.biUnion' (Set.toFinite {j | y.val j ≠ 0}) h_fin) h_subs
   rw [Finset.prod_mul_distrib, finprod_mul_distrib (FinitePlace.mulSupport_finite h_t_nezero) hsupp, mul_mul_mul_comm,
-      prod_eq_one h_t_nezero, one_mul]
+      prod_abs_eq_one h_t_nezero, one_mul]
 
 --below def with sup and NNReal
 
