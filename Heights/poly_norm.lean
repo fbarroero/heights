@@ -2,6 +2,7 @@ import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.Polynomial.Vieta
+--import Mathlib
 
 open Classical
 
@@ -11,9 +12,8 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
     [IsAlgClosed K] [CharZero K] {p : Polynomial K} {B : NNReal}
     (h_bdd : (Multiset.map (fun (a : K) ↦ ‖a‖₊) p.roots).sup ≤ B) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) := by
-  by_cases h₀ : p = 0; simp only [h₀, coeff_zero, nnnorm_zero, leadingCoeff_zero, natDegree_zero,
-    zero_mul, zero_le, Nat.sub_eq_zero_of_le, pow_zero, mul_one, le_refl]
-  by_cases h : p.natDegree < n; simp only [coeff_eq_zero_of_natDegree_lt h, nnnorm_zero, zero_le]
+  by_cases h₀ : p = 0; simp [h₀]
+  by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h]
   rw [not_lt] at h
   simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits_codomain p))
     h, Multiset.esymm, Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow,
@@ -33,8 +33,7 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
           gcongr with x hx z hz
           apply h_bdd ‖z‖₊ z h₀ _ rfl
           simp only [Multiset.mem_toFinset, Multiset.mem_powersetCard] at hx
-          obtain ⟨h_root, _⟩ := hx
-          have : z ∈ p.roots := Multiset.mem_of_le h_root (Multiset.mem_dedup.mp hz)
+          have : z ∈ p.roots := Multiset.mem_of_le hx.1 (Multiset.mem_dedup.mp hz)
           rw [mem_roots', IsRoot.def] at this
           exact this.2
   _ = ∑ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset,
@@ -55,8 +54,7 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
               Multiset.nodup_singleton, hB, pow_zero, mul_one, Finset.sum_singleton,
               Multiset.mem_singleton, Multiset.count_eq_one_of_mem, Nat.cast_one, norm_one]
             rw [Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd, Nat.choose_self, Nat.cast_one]
-          · simp only [hB, NNReal.coe_zero, ne_eq, hd, not_false_eq_true, zero_pow, mul_zero,
-            Finset.sum_const_zero, le_refl]
+          · simp [hB, hd]
           · rw [← Finset.sum_mul, mul_le_mul_right (mod_cast pow_pos (pos_iff_ne_zero.mpr hB) _)]
             apply le_trans (Finset.sum_le_sum (fun _ _ ↦ Nat.norm_cast_le _))
             simp only [norm_one, mul_one]
@@ -69,10 +67,18 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
             rw [← splits_iff_card_roots]
             exact IsAlgClosed.splits p
 
+theorem Northcott {B : NNReal} : {p : Polynomial ℤ |
+    Finset.univ.sup (fun n : Fin p.natDegree ↦ ‖p.coeff n‖₊) ≤ B}.Finite := by
+
+  sorry
+
 --#min_imports
 
-
---#find_home! bdd_coeff_of_bdd_roots_and_lead
-
+/-
+#find_home! bdd_coeff_of_bdd_roots_and_lead
+says
+[Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order,
+Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog,
+Mathlib.Analysis.CStarAlgebra.SpecialFunctions.PosPart] -/
 
 end Polynomial
