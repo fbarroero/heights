@@ -10,16 +10,16 @@ open Classical
 
 namespace Polynomial
 
-theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
-    [IsAlgClosed K] [CharZero K] {p : Polynomial K} {B : NNReal}
+theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K] {p : Polynomial K}
+    (hsplit : Splits (RingHom.id K) p) {B : NNReal}
     (h_bdd : (Multiset.map (fun (a : K) ↦ ‖a‖₊) p.roots).sup ≤ B) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀]
   by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h]
   rw [not_lt] at h
-  simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits_codomain p))
-    h, Multiset.esymm, Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow,
-    nnnorm_neg, nnnorm_one, one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
+  simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, Multiset.esymm,
+    Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
+    one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
     mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀)), ge_iff_le]
   apply le_trans (norm_sum_le _ _)
   simp_rw [Finset.prod_multiset_count, norm_mul, norm_prod, norm_pow]
@@ -67,8 +67,7 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K]
             apply le_of_eq
             congr
             rw [← splits_iff_card_roots]
-            exact IsAlgClosed.splits p
-
+            exact hsplit
 section Semiring
 
 variable {R : Type u} [Semiring R]
@@ -78,13 +77,13 @@ noncomputable def polConstr (n : ℕ) := fun f : Fin (n + 1) → R => ∑ i in F
 
 end Semiring
 
-theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ | p.natDegree ≤ n ∧
+theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ // p.natDegree ≤ n ∧
     Finset.univ.sup (fun i : Fin (n + 1) ↦ ‖p.coeff i‖₊) ≤ B} = (2 * (Nat.floor B) + 1) ^ (n + 1) := by
   simp only [Finset.sup_le_iff, Finset.mem_univ, forall_const, Set.coe_setOf]
   let Bp := fun i : Fin (n + 1) ↦ (Nat.floor B : ℤ)
   let Bm := fun i : Fin (n + 1) ↦ - (Nat.floor B : ℤ)
   let Box := Finset.Icc Bm Bp
-  let BoxPoly := { p : Polynomial ℤ // p.natDegree ≤ n ∧ ∀ i : Fin (n + 1), ‖p.coeff ↑i‖₊ ≤ B }
+  let BoxPoly := {p : Polynomial ℤ // p.natDegree ≤ n ∧ ∀ i : Fin (n + 1), ‖p.coeff ↑i‖₊ ≤ B}
   have hf (p : BoxPoly) : (fun i : Fin (n + 1) ↦ p.val.coeff i) ∈ Box := by
     simp only [Finset.mem_Icc, Box, Bm, Bp]
     refine ⟨Pi.le_def.mpr ?_, Pi.le_def.mpr ?_⟩
