@@ -12,7 +12,7 @@ namespace Polynomial
 
 theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K] {p : Polynomial K}
     (hsplit : Splits (RingHom.id K) p) {B : NNReal}
-    (h_bdd : (Multiset.map (fun (a : K) ↦ ‖a‖₊) p.roots).sup ≤ B) (n : ℕ) :
+    (h_bdd : ((p.roots).map (fun a ↦ ‖a‖₊)).sup ≤ B) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀]
   by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h]
@@ -20,54 +20,39 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K]
   simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, Multiset.esymm,
     Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
     one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
-    mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀)), ge_iff_le]
-  apply le_trans (norm_sum_le _ _)
+    mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
+  apply le_trans <| norm_sum_le _ _
   simp_rw [Finset.prod_multiset_count, norm_mul, norm_prod, norm_pow]
-  simp only [Multiset.sup_le, Multiset.mem_map, mem_roots', IsRoot.def, forall_exists_index,
-    and_imp] at h_bdd
+  simp only [Multiset.sup_le, Multiset.mem_map, forall_exists_index, and_imp] at h_bdd
+  let S := (p.roots).powersetCard (p.natDegree - n)
   calc
-      ∑ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset,
-        ‖((Multiset.count x (Multiset.powersetCard (p.natDegree - n) p.roots)) : K)‖ *
-        ∏ x_1 ∈ x.toFinset, ‖x_1‖ ^ Multiset.count x_1 x
-    ≤ ∑ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset,
-        ‖((Multiset.count x (Multiset.powersetCard (p.natDegree - n) p.roots)) : K)‖ *
-        ∏ x_1 ∈ x.toFinset, (B : ℝ) ^ Multiset.count x_1 x := by
-          gcongr with x hx z hz
-          apply h_bdd ‖z‖₊ z h₀ _ rfl
-          simp only [Multiset.mem_toFinset, Multiset.mem_powersetCard] at hx
-          have : z ∈ p.roots := Multiset.mem_of_le hx.1 (Multiset.mem_dedup.mp hz)
-          rw [mem_roots', IsRoot.def] at this
-          exact this.2
-  _ = ∑ x ∈ (Multiset.powersetCard (p.natDegree - n) p.roots).toFinset,
-        ‖((Multiset.count x (Multiset.powersetCard (p.natDegree - n) p.roots)) : K)‖ *
-        (B : ℝ) ^ (p.natDegree - n) := by
+      ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * ∏ x ∈ P.toFinset, ‖x‖ ^ P.count x
+    ≤ ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * ∏ x ∈ P.toFinset, (B : ℝ) ^ P.count x := by
+          gcongr with P hP z hz
+          simp only [Multiset.mem_toFinset, Multiset.mem_powersetCard, S] at hP
+          exact h_bdd ‖z‖₊ z (Multiset.mem_of_le hP.1 (Multiset.mem_dedup.mp hz)) rfl
+  _ = ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * (B : ℝ) ^ (p.natDegree - n) := by
           apply Finset.sum_congr rfl
           intro x hx
-          simp only [mul_eq_mul_left_iff, nnnorm_eq_zero, Nat.cast_eq_zero,
-            Multiset.count_eq_zero, Multiset.mem_powersetCard, not_and, Finset.prod_pow_eq_pow_sum]
-          left
-          congr
-          simp_all only [Multiset.mem_toFinset, Multiset.mem_powersetCard, implies_true,
-              Multiset.sum_count_eq_card]
-  _ ≤ ↑(p.natDegree.choose n) * (B : ℝ) ^ (p.natDegree - n) := by
+          simp only [Multiset.mem_toFinset, Multiset.mem_powersetCard, S] at hx
+          simp [S, hx, Finset.prod_pow_eq_pow_sum]
+  _ ≤ ∑ P ∈ S.toFinset, (S.count P) * (B : ℝ) ^ (p.natDegree - n) := by
+          gcongr with P hP
+          apply le_trans <| Nat.norm_cast_le _
+          simp
+  _ = ↑(p.natDegree.choose n) * (B : ℝ) ^ (p.natDegree - n) := by
           by_cases hB : B = 0
           by_cases hd : p.natDegree - n = 0
-          · simp only [hd, Multiset.powersetCard_zero_left, Multiset.toFinset_singleton,
-              Multiset.nodup_singleton, hB, pow_zero, mul_one, Finset.sum_singleton,
-              Multiset.mem_singleton, Multiset.count_eq_one_of_mem, Nat.cast_one, norm_one]
-            rw [Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd, Nat.choose_self, Nat.cast_one]
+          · simp [S, hd, hB, Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd]
           · simp [hB, hd]
-          · rw [← Finset.sum_mul, mul_le_mul_right (mod_cast pow_pos (pos_iff_ne_zero.mpr hB) _)]
-            apply le_trans (Finset.sum_le_sum (fun _ _ ↦ Nat.norm_cast_le _))
-            simp only [norm_one, mul_one]
+          · rw [← Finset.sum_mul]
+            simp only [mul_eq_mul_right_iff, pow_eq_zero_iff', NNReal.coe_eq_zero, hB, ne_eq,
+              false_and, or_false]
             norm_cast
-            simp only [Multiset.mem_powersetCard, Multiset.mem_toFinset, imp_self, implies_true,
-              Multiset.sum_count_eq_card, Multiset.card_powersetCard]
-            rw [← Nat.choose_symm h]
-            apply le_of_eq
+            simp only [← Nat.choose_symm h, S, Multiset.mem_powersetCard, Multiset.mem_toFinset,
+              imp_self, implies_true, Multiset.sum_count_eq_card, Multiset.card_powersetCard]
             congr
-            rw [← splits_iff_card_roots]
-            exact hsplit
+            exact splits_iff_card_roots.mp hsplit
 section Semiring
 
 variable {R : Type u} [Semiring R]

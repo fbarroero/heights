@@ -80,7 +80,8 @@ open Classical
 theorem Complex.bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℂ} {B : NNReal}
     (h_bdd : (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) p.roots).sup ≤ B) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) :=
-  Polynomial.bdd_coeff_of_bdd_roots_and_lead h_bdd n
+  Polynomial.bdd_coeff_of_bdd_roots_and_lead (IsAlgClosed.splits p) h_bdd n
+
 
 theorem Northcott (n : ℕ) (B : NNReal) : Nat.card {p : Polynomial ℤ | p.natDegree ≤ n ∧
     MahlerMeasure (map coe p) ≤ B} ≤ (2 * (Nat.floor B) + 1) ^ (n + 1) := by sorry
