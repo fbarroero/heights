@@ -1,4 +1,4 @@
-import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Analysis.Normed.Field.Basic
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.RingTheory.Henselian
@@ -22,8 +22,6 @@ theorem mahler_measure_const (z : K) : MahlerMeasure (C z) = ‖z‖₊ := by si
 
 @[simp]
 theorem mahler_measure_X : MahlerMeasure (X : K[X])= 1 := by simp [MahlerMeasure]
-
-theorem roots_C_mul_X_add_C {a : K} (b : K) (ha : a ≠ 0) : (C a * X + C b).roots = {-(a⁻¹ * b)} := by sorry
 
 @[simp]
 theorem mahler_measure_C_mul_X_add_C {z₁ z₀ : K} (h1 : z₁ ≠ 0) : MahlerMeasure (C z₁ * X + C z₀) =

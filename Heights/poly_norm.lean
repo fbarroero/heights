@@ -10,31 +10,32 @@ open Classical
 
 namespace Polynomial
 
-theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K] {p : Polynomial K}
+open Multiset in
+theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K] {p : K[X]}
     (hsplit : Splits (RingHom.id K) p) {B : NNReal}
     (h_bdd : ((p.roots).map (fun a ↦ ‖a‖₊)).sup ≤ B) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀]
   by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h]
   rw [not_lt] at h
-  simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, Multiset.esymm,
+  simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, esymm,
     Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
     one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
     mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
   apply le_trans <| norm_sum_le _ _
   simp_rw [Finset.prod_multiset_count, norm_mul, norm_prod, norm_pow]
-  simp only [Multiset.sup_le, Multiset.mem_map, forall_exists_index, and_imp] at h_bdd
+  simp only [Multiset.sup_le, mem_map, forall_exists_index, and_imp] at h_bdd
   let S := (p.roots).powersetCard (p.natDegree - n)
   calc
       ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * ∏ x ∈ P.toFinset, ‖x‖ ^ P.count x
     ≤ ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * ∏ x ∈ P.toFinset, (B : ℝ) ^ P.count x := by
           gcongr with P hP z hz
-          simp only [Multiset.mem_toFinset, Multiset.mem_powersetCard, S] at hP
-          exact h_bdd ‖z‖₊ z (Multiset.mem_of_le hP.1 (Multiset.mem_dedup.mp hz)) rfl
+          simp only [mem_toFinset, mem_powersetCard, S] at hP
+          exact h_bdd ‖z‖₊ z (mem_of_le hP.1 (mem_dedup.mp hz)) rfl
   _ = ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * (B : ℝ) ^ (p.natDegree - n) := by
           apply Finset.sum_congr rfl
           intro x hx
-          simp only [Multiset.mem_toFinset, Multiset.mem_powersetCard, S] at hx
+          simp only [mem_toFinset, mem_powersetCard, S] at hx
           simp [S, hx, Finset.prod_pow_eq_pow_sum]
   _ ≤ ∑ P ∈ S.toFinset, (S.count P) * (B : ℝ) ^ (p.natDegree - n) := by
           gcongr with P hP
@@ -49,28 +50,72 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K]
             simp only [mul_eq_mul_right_iff, pow_eq_zero_iff', NNReal.coe_eq_zero, hB, ne_eq,
               false_and, or_false]
             norm_cast
-            simp only [← Nat.choose_symm h, S, Multiset.mem_powersetCard, Multiset.mem_toFinset,
-              imp_self, implies_true, Multiset.sum_count_eq_card, Multiset.card_powersetCard]
+            simp only [← Nat.choose_symm h, S, mem_powersetCard, mem_toFinset, imp_self,
+            implies_true, sum_count_eq_card, card_powersetCard]
             congr
             exact splits_iff_card_roots.mp hsplit
+
 section Semiring
 
 variable {R : Type u} [Semiring R]
 
-noncomputable def polConstr (n : ℕ) := fun f : Fin (n + 1) → R => ∑ i in Finset.range (n + 1),
+noncomputable def polConstr (n : ℕ) := fun f : Fin (n + 1) → R ↦ ∑ i in Finset.range (n + 1),
   Polynomial.monomial i (f i)
+
+noncomputable def foo (n : ℕ) : (Fin (n + 1) → R) → (ℕ →₀ R) := by
+  intro v
+  let f : ℕ → R := fun i => if h : i < n + 1 then v ⟨i, h⟩ else 0
+  have hfin : f.support.Finite := Set.Finite.subset (Finset.finite_toSet (Finset.range (n + 1)))
+    (by  simp_all [f])
+  exact {toFun := f, support := hfin.toFinset, mem_support_toFun := (by simp [f])}
+
+noncomputable def polConstr' (n : ℕ) : (Fin (n + 1) → R) →+ R[X] where
+  toFun t := ⟨foo n t⟩
+  map_add' x y := by
+    ext m
+    simp only [foo, Pi.add_apply, coeff_ofFinsupp, Finsupp.coe_mk, coeff_add]
+    split; all_goals simp
+  map_zero' := by
+    simp only [foo, Pi.zero_apply, dite_eq_ite, ite_self, Function.support_zero,
+      Set.toFinite_toFinset, Set.toFinset_empty, ofFinsupp_eq_zero]
+    rfl
 
 end Semiring
 
-theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ // p.natDegree ≤ n ∧
-    Finset.univ.sup (fun i : Fin (n + 1) ↦ ‖p.coeff i‖₊) ≤ B} = (2 * (Nat.floor B) + 1) ^ (n + 1) := by
-  simp only [Finset.sup_le_iff, Finset.mem_univ, forall_const, Set.coe_setOf]
+open Finset in
+theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧
+    ∀ i, ‖p.coeff i‖₊ ≤ B} = (2 * Nat.floor B + 1) ^ (n + 1) := by
   let Bp := fun i : Fin (n + 1) ↦ (Nat.floor B : ℤ)
-  let Bm := fun i : Fin (n + 1) ↦ - (Nat.floor B : ℤ)
-  let Box := Finset.Icc Bm Bp
-  let BoxPoly := {p : Polynomial ℤ // p.natDegree ≤ n ∧ ∀ i : Fin (n + 1), ‖p.coeff ↑i‖₊ ≤ B}
+  let Bm := fun i : Fin (n + 1) ↦ -(Nat.floor B : ℤ)
+  let Box := Icc Bm Bp
+  let BoxPoly := {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, ‖p.coeff i‖₊ ≤ B}
   have hf (p : BoxPoly) : (fun i : Fin (n + 1) ↦ p.val.coeff i) ∈ Box := by
-    simp only [Finset.mem_Icc, Box, Bm, Bp]
+    simp only [mem_Icc, Box, Bm, Bp]
+    have hcoef := p.property.2
+    simp_rw [← Int.abs_le_floor_nnreal_iff] at hcoef
+    refine ⟨Pi.le_def.mpr (fun i ↦ neg_le_of_abs_le <| hcoef i),
+      Pi.le_def.mpr (fun i ↦ le_of_max_le_left <| hcoef i)⟩
+  let f : BoxPoly → Box := fun p => ⟨fun i ↦ p.val.coeff i, hf p⟩
+  let g : Box → BoxPoly := fun p => ⟨polConstr' n p, by sorry⟩
+  have hfBij : f.Bijective := by
+    simp [Function.Bijective]
+    sorry
+  simp only [Nat.card_eq_of_bijective f hfBij, Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
+    Int.card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
+  norm_cast
+  rw [Int.toNat_natCast]
+  ring
+
+open Finset in
+theorem trivial' {B : NNReal} (n : ℕ) : Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧
+    univ.sup (fun i : Fin (n + 1) ↦ ‖p.coeff i‖₊) ≤ B} = (2 * (Nat.floor B) + 1) ^ (n + 1) := by
+  simp only [Finset.sup_le_iff, mem_univ, forall_const, Set.coe_setOf]
+  let Bp := fun i : Fin (n + 1) ↦ (Nat.floor B : ℤ)
+  let Bm := fun i : Fin (n + 1) ↦ -(Nat.floor B : ℤ)
+  let Box := Icc Bm Bp
+  let BoxPoly := {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i : Fin (n + 1), ‖p.coeff i‖₊ ≤ B}
+  have hf (p : BoxPoly) : (fun i : Fin (n + 1) ↦ p.val.coeff i) ∈ Box := by
+    simp only [mem_Icc, Box, Bm, Bp]
     refine ⟨Pi.le_def.mpr ?_, Pi.le_def.mpr ?_⟩
     any_goals intro i
     any_goals have hcoef := p.property.2 i
@@ -87,7 +132,7 @@ theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ // p.natDe
       · simp only [polConstr]
         apply Polynomial.natDegree_sum_le_of_forall_le
         intro i hi
-        simp only [Finset.mem_range] at hi
+        simp only [mem_range] at hi
         rw [Polynomial.natDegree_monomial i (v i)]
         split
         next h => simp_all only [zero_le]
@@ -95,27 +140,27 @@ theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ // p.natDe
       . intro i
         simp only [polConstr]
         simp only [finset_sum_coeff,  Polynomial.coeff_monomial]
-        simp only [Finset.sum_ite_eq', Finset.mem_range, Fin.is_lt, ↓reduceIte,
+        simp only [sum_ite_eq', mem_range, Fin.is_lt, ↓reduceIte,
           Fin.cast_val_eq_self]
-        simp only [Finset.mem_Icc, Box, Bm, Bp] at hv
+        simp only [mem_Icc, Box, Bm, Bp] at hv
         obtain ⟨left, right⟩ := hv
         rw [← Int.abs_le_floor_nnreal_iff]
         specialize left i
         specialize right i
         simp_all only
-        rw [@abs_le]
+        rw [abs_le]
         exact And.symm ⟨right, left⟩
     use p
     simp only
     constructor
     · ext i
-      simp only [f, Subtype.coe_mk, polConstr, finset_sum_coeff, Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range, Fin.is_lt, ↓reduceIte,
+      simp only [f, Subtype.coe_mk, polConstr, finset_sum_coeff, Polynomial.coeff_monomial, sum_ite_eq', mem_range, Fin.is_lt, ↓reduceIte,
           Fin.cast_val_eq_self]
     · intro q hq
       apply Subtype.eq
       rw [← Polynomial.coeff_inj]
       ext i
-      simp only [f, Subtype.coe_mk, polConstr, finset_sum_coeff, Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range, Fin.is_lt, ↓reduceIte,
+      simp only [f, Subtype.coe_mk, polConstr, finset_sum_coeff, Polynomial.coeff_monomial, sum_ite_eq', mem_range, Fin.is_lt, ↓reduceIte,
           Fin.cast_val_eq_self] at hq
       simp only [Subtype.mk.injEq] at hq
       subst hq
@@ -124,10 +169,10 @@ theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ // p.natDe
       obtain ⟨degq, boxq⟩ := propertyq
       obtain ⟨p1, propertyp⟩ := p
       obtain ⟨degp, boxp⟩ := propertyp
-      simp only [polConstr, Fin.val_natCast, finset_sum_coeff, coeff_monomial, Finset.sum_ite_eq',
-        Finset.mem_range]
+      simp only [polConstr, Fin.val_natCast, finset_sum_coeff, coeff_monomial, sum_ite_eq',
+        mem_range]
       by_cases h : i < n + 1
-      · simp_all only [Finset.mem_Icc, ↓reduceIte, Box, Bm, Bp]
+      · simp_all only [mem_Icc, ↓reduceIte, Box, Bm, Bp]
         congr
         exact Eq.symm (Nat.mod_eq_of_lt h)
       · split
@@ -138,10 +183,10 @@ theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : Polynomial ℤ // p.natDe
           omega
   rw [Nat.card_eq_of_bijective f hfBij]
   simp only [Box]
-  convert_to (Finset.Icc Bm Bp).card = (2 * (Nat.floor B) + 1) ^ (n + 1)
+  convert_to (Icc Bm Bp).card = (2 * (Nat.floor B) + 1) ^ (n + 1)
   · exact Nat.card_eq_finsetCard (Finset.Icc Bm Bp)
   simp_rw [Pi.card_Icc, Int.card_Icc, Bp, Bm]
-  simp only [sub_neg_eq_add, Finset.prod_const, Finset.card_univ, Fintype.card_fin, zero_le, ne_eq,
+  simp only [sub_neg_eq_add, prod_const, card_univ, Fintype.card_fin, zero_le, ne_eq,
     AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false, not_false_eq_true, pow_left_inj₀]
   zify
   rw [Int.toNat_eq_max, add_comm, ← add_assoc]
