@@ -4,6 +4,7 @@ import Mathlib.Data.Real.StarOrdered
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Tactic.Rify
+import Heights.Fin1
 --import Mathlib
 
 open Classical
@@ -55,6 +56,55 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K]
             congr
             exact splits_iff_card_roots.mp hsplit
 
+
+
+open Finset in
+theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧
+    ∀ i, ‖p.coeff i‖₊ ≤ B} = (2 * Nat.floor B + 1) ^ (n + 1) := by
+  let Bp := fun i : Fin (n + 1) ↦ (Nat.floor B : ℤ)
+  let Bm := fun i : Fin (n + 1) ↦ -(Nat.floor B : ℤ)
+  let Box := Icc Bm Bp
+  let BoxPoly := {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, ‖p.coeff i‖₊ ≤ B}
+  have hf (p : BoxPoly) : (fun i : Fin (n + 1) ↦ p.val.coeff i) ∈ Box := by
+    simp only [mem_Icc, Box, Bm, Bp]
+    have hcoef := p.property.2
+    simp_rw [← Int.abs_le_floor_nnreal_iff] at hcoef
+    refine ⟨Pi.le_def.mpr (fun i ↦ neg_le_of_abs_le <| hcoef i),
+      Pi.le_def.mpr (fun i ↦ le_of_max_le_left <| hcoef i)⟩
+  let f : BoxPoly → Box := fun p => ⟨fun i ↦ p.val.coeff i, hf p⟩
+  let g : Box → BoxPoly := fun p => ⟨ofFinToSemiring n p, by
+    refine ⟨natDegree_le p.val, ?_⟩
+    intro i
+    by_cases h : i < n + 1
+    · obtain ⟨val, prop⟩ := p
+      simp only [coeff_eq_val_of_lt val h, ← Int.abs_le_floor_nnreal_iff, abs_le]
+      simp only [mem_Icc, Box, Bm, Bp] at prop
+      exact ⟨prop.1 ↑i, prop.2 ↑i⟩
+    · rw [not_lt] at h
+      simp [h]⟩
+  have hfBij : f.Bijective := by
+    refine Function.bijective_iff_has_inverse.mpr ?_
+    use g
+    constructor
+    · intro p
+      ext i
+      simp only
+      by_cases h : i < n + 1
+      · simp [h, Nat.mod_eq_of_modEq rfl h]
+      · rw [not_lt] at h
+        simp only [h, coeff_eq_zero_of_gt]
+        replace h : n < i := h
+        rw [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_le_of_lt p.property.1 h)]
+    · intro w
+      ext i
+      simp [g, f]
+  simp only [Nat.card_eq_of_bijective f hfBij, Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
+    Int.card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
+  norm_cast
+  rw [Int.toNat_natCast]
+  ring
+
+
 section Semiring
 
 variable {R : Type u} [Semiring R]
@@ -81,30 +131,6 @@ noncomputable def polConstr' (n : ℕ) : (Fin (n + 1) → R) →+ R[X] where
     rfl
 
 end Semiring
-
-open Finset in
-theorem trivial {B : NNReal} (n : ℕ) : Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧
-    ∀ i, ‖p.coeff i‖₊ ≤ B} = (2 * Nat.floor B + 1) ^ (n + 1) := by
-  let Bp := fun i : Fin (n + 1) ↦ (Nat.floor B : ℤ)
-  let Bm := fun i : Fin (n + 1) ↦ -(Nat.floor B : ℤ)
-  let Box := Icc Bm Bp
-  let BoxPoly := {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, ‖p.coeff i‖₊ ≤ B}
-  have hf (p : BoxPoly) : (fun i : Fin (n + 1) ↦ p.val.coeff i) ∈ Box := by
-    simp only [mem_Icc, Box, Bm, Bp]
-    have hcoef := p.property.2
-    simp_rw [← Int.abs_le_floor_nnreal_iff] at hcoef
-    refine ⟨Pi.le_def.mpr (fun i ↦ neg_le_of_abs_le <| hcoef i),
-      Pi.le_def.mpr (fun i ↦ le_of_max_le_left <| hcoef i)⟩
-  let f : BoxPoly → Box := fun p => ⟨fun i ↦ p.val.coeff i, hf p⟩
-  let g : Box → BoxPoly := fun p => ⟨polConstr' n p, by sorry⟩
-  have hfBij : f.Bijective := by
-    simp [Function.Bijective]
-    sorry
-  simp only [Nat.card_eq_of_bijective f hfBij, Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
-    Int.card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
-  norm_cast
-  rw [Int.toNat_natCast]
-  ring
 
 open Finset in
 theorem trivial' {B : NNReal} (n : ℕ) : Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧
