@@ -1,5 +1,6 @@
 import Mathlib.Algebra.Polynomial.Degree.Definitions
 import Mathlib.Algebra.Polynomial.Roots
+import Mathlib
 
 namespace Polynomial
 
@@ -49,7 +50,5 @@ noncomputable def toFin (n : ℕ) : R[X] →+ (Fin (n + 1) → R) where
     simp only [coeff_add]
     rfl
   map_zero' := rfl
-
-
 
 end Polynomial

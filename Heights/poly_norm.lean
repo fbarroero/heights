@@ -57,7 +57,51 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K]
             exact splits_iff_card_roots.mp hsplit
 
 open Finset in
-theorem card_eq_of_natDegree_le_of_coeff_le {B : NNReal} (n : ℕ) :
+theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} {B₁ B₂ : Fin (n + 1) → ℝ}
+    (h_B : ∀ i, Int.ceil (B₁ i) ≤ Int.floor (B₂ i)) :
+    Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i} =
+    ∏ i : Fin (n + 1), (Int.floor (B₂ i) - Int.ceil (B₁ i) + 1)  := by
+  let Bp := fun i ↦ Int.floor (B₂ i)
+  let Bm := fun i ↦ Int.ceil (B₁ i)
+  let Box := Icc Bm Bp
+  let BoxPoly := {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i}
+  have hf (p : BoxPoly) : (fun i : Fin (n + 1) ↦ p.val.coeff i) ∈ Box := by
+    simp only [mem_Icc, Box, Bm, Bp]
+    obtain ⟨val, h_deg, bounds⟩ := p
+    refine ⟨fun i ↦ Int.ceil_le.mpr (bounds i).1, fun i ↦ Int.le_floor.mpr (bounds i).2⟩
+  let f : BoxPoly → Box := fun p => ⟨fun i ↦ p.val.coeff i, hf p⟩
+  let g : Box → BoxPoly := fun p => ⟨ofFinToSemiring n p, by
+    refine ⟨natDegree_le p.val, ?_⟩
+    intro i
+    obtain ⟨val, prop⟩ := p
+    simp only [mem_Icc, Box, Bm, Bp] at prop
+    simp only [coeff_eq_val_of_lt val i.2, Fin.cast_val_eq_self]
+    refine ⟨Int.ceil_le.mp (prop.1 i), Int.le_floor.mp (prop.2 i)⟩
+    ⟩
+  have hfBij : f.Bijective := by
+    refine Function.bijective_iff_has_inverse.mpr ⟨g, ?_, fun _ ↦ by simp [f, g]⟩
+    intro p
+    ext i
+    simp only
+    by_cases h : i < n + 1
+    · simp [h, Nat.mod_eq_of_modEq rfl h]
+    · rw [not_lt] at h
+      simp only [h, coeff_eq_zero_of_gt]
+      replace h : n < i := h
+      rw [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_le_of_lt p.property.1 h)]
+  simp only [Nat.card_eq_of_bijective f hfBij, Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
+    Int.card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
+  push_cast
+  congr
+  ext i
+  specialize h_B i
+  rw [Int.ofNat_toNat, add_sub_right_comm ⌊B₂ i⌋ 1 ⌈B₁ i⌉]
+  apply max_eq_left
+  omega
+
+
+open Finset in
+theorem card_eq_of_natDegree_le_of_coeff_le' {B : NNReal} (n : ℕ) :
     Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, ‖p.coeff i‖₊ ≤ B} =
     (2 * Nat.floor B + 1) ^ (n + 1) := by
   let Bp := fun i : Fin (n + 1) ↦ (Nat.floor B : ℤ)
@@ -75,7 +119,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {B : NNReal} (n : ℕ) :
     refine ⟨natDegree_le p.val, ?_⟩
     intro i
     by_cases h : n + 1 ≤ i
-    · simp [h]
+    · simp only [h, coeff_eq_zero_of_gt, nnnorm_zero, zero_le]
     · rw [not_le] at h
       obtain ⟨val, prop⟩ := p
       simp only [mem_Icc, Box, Bm, Bp] at prop
@@ -95,7 +139,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {B : NNReal} (n : ℕ) :
   simp only [Nat.card_eq_of_bijective f hfBij, Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
     Int.card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
   norm_cast
-  rw [Int.toNat_natCast]
+  --rw [Int.toNat_natCast]
   ring
 
 
