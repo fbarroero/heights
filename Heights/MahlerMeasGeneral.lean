@@ -233,9 +233,8 @@ def funct (n : ℕ) (B : NNReal) :
 
 set_option maxHeartbeats 0
 
-theorem inj (n : ℕ) (B : NNReal) : (funct n B).Injective := by
-  apply Subtype.map_injective
-  exact fun ⦃a₁ a₂⦄ a ↦ a
+theorem inj (n : ℕ) (B : NNReal) : (funct n B).Injective :=
+  Subtype.map_injective _ Function.injective_id
 
 theorem Northcott (n : ℕ) (B : NNReal) :
     Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧ (p.map (castRingHom ℂ)).MahlerMeasure ≤ B} ≤
