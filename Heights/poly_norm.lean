@@ -82,14 +82,15 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} {B₁ B₂ : Fin (n + 1) �
     refine Function.bijective_iff_has_inverse.mpr ⟨g, ?_, fun _ ↦ by simp [f, g]⟩
     intro p
     ext i
-    simp only
+    simp only [Bm, f, Box, Bp, g, BoxPoly]
     by_cases h : i < n + 1
     · simp [h, Nat.mod_eq_of_modEq rfl h]
     · rw [not_lt] at h
       simp only [h, coeff_eq_zero_of_gt]
       replace h : n < i := h
       rw [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_le_of_lt p.property.1 h)]
-  simp only [Nat.card_eq_of_bijective f hfBij, Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
+  rw [Nat.card_eq_of_bijective f hfBij]
+  simp only [Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
     Int.card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
   push_cast
   congr
@@ -100,7 +101,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} {B₁ B₂ : Fin (n + 1) �
   omega
 
 
-open Finset in
+/- open Finset in
 theorem card_eq_of_natDegree_le_of_coeff_le' {B : NNReal} (n : ℕ) :
     Nat.card {p : ℤ[X] // p.natDegree ≤ n ∧ ∀ i, ‖p.coeff i‖₊ ≤ B} =
     (2 * Nat.floor B + 1) ^ (n + 1) := by
@@ -141,8 +142,8 @@ theorem card_eq_of_natDegree_le_of_coeff_le' {B : NNReal} (n : ℕ) :
   norm_cast
   --rw [Int.toNat_natCast]
   ring
-
-
+ -/
+/-
 section Semiring
 
 variable {R : Type u} [Semiring R]
@@ -257,7 +258,7 @@ theorem trivial' {B : NNReal} (n : ℕ) : Nat.card {p : ℤ[X] // p.natDegree �
   have : ↑⌊B⌋₊ + ↑⌊B⌋₊ = 2 * (⌊B⌋₊ : ℤ) := by ring
   simp_rw [this]
   exact rfl
-
+ -/
 --#min_imports
 
 /-
