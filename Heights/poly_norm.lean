@@ -1,24 +1,35 @@
---to Mathlib.Analysis.Polynomial.BoundedCoefficients
+--to Mathlib.Analysis.Polynomial.BoundCoefficients
 
 /-
 Copyright (c) 2025 Fabrizio Barroero. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
-
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.RingTheory.Polynomial.Vieta
+/-!
+# Bound on coefficients of a polynomial in terms of its leading coefficient and roots
 
+In this file we prove an explicit bound on the `NNNorm` of the coefficients of a polynomial in terms
+of the `NNNorm` of its leading coefficient and the `NNNorm` of its roots.
+
+If `p` is the polynomial `a_d X ^ d + ... + a_0` then
+`‖a_n‖₊ ≤ ‖a_d‖₊ * d.choose n * (sup ‖r‖₊) ^ (d - n)` where `r` ranges over the roots of `p`.
+
+## Main results
+
+- `bdd_coeff_of_bdd_roots_and_lead`: if a polynomial splits its coefficients are bounded in terms of
+the `NNNorm` of its leading coefficient and roots.
+
+-/
 namespace Polynomial
 
---TODO: chahge claim to  ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * ((p.roots).map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n)
---and get rid of B
 open Classical Multiset in
-theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K] {p : K[X]}
-    (hsplit : Splits (RingHom.id K) p) {B : NNReal}
-    (h_bdd : ((p.roots).map (fun a ↦ ‖a‖₊)).sup ≤ B) (n : ℕ) :
-    ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) := by
+theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K] [CharZero K] {p : K[X]}
+    (hsplit : Splits (RingHom.id K) p) (n : ℕ) :
+    ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * (p.natDegree).choose n *
+    ((p.roots).map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀]
   by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h]
   rw [not_lt] at h
@@ -26,33 +37,31 @@ theorem bdd_coeff_of_bdd_roots_and_lead {K : Type*} [NormedField K] [CharZero K]
     Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
     one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
     mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
-  apply le_trans <| norm_sum_le _ _
-  simp_rw [Finset.prod_multiset_count, norm_mul, norm_prod, norm_pow]
-  simp only [Multiset.sup_le, mem_map, forall_exists_index, and_imp] at h_bdd
+  apply le_trans <| nnnorm_sum_le _ _
+  simp_rw [Finset.prod_multiset_count, nnnorm_mul, nnnorm_prod, nnnorm_pow]
   let S := (p.roots).powersetCard (p.natDegree - n)
+  let B := ((p.roots).map (fun a ↦ ‖a‖₊)).sup
   calc
-      ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * ∏ x ∈ P.toFinset, ‖x‖ ^ P.count x
-    ≤ ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * ∏ x ∈ P.toFinset, (B : ℝ) ^ P.count x := by
+      ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * ∏ x ∈ P.toFinset, ‖x‖₊ ^ P.count x
+    ≤ ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * ∏ x ∈ P.toFinset, B ^ P.count x := by
           gcongr with P hP z hz
           simp only [mem_toFinset, mem_powersetCard, S] at hP
-          exact h_bdd ‖z‖₊ z (mem_of_le hP.1 (mem_dedup.mp hz)) rfl
-  _ = ∑ P ∈ S.toFinset, ‖(S.count P : K)‖ * (B : ℝ) ^ (p.natDegree - n) := by
+          exact Multiset.le_sup <| mem_map_of_mem (fun a ↦ ‖a‖₊) <| mem_of_le hP.1 (mem_dedup.mp hz)
+  _ = ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * B ^ (p.natDegree - n) := by
           apply Finset.sum_congr rfl
-          intro x hx
-          simp only [mem_toFinset, mem_powersetCard, S] at hx
-          simp [S, hx, Finset.prod_pow_eq_pow_sum]
-  _ ≤ ∑ P ∈ S.toFinset, (S.count P) * (B : ℝ) ^ (p.natDegree - n) := by
+          intro P hP
+          simp_all [S, hP, Finset.prod_pow_eq_pow_sum]
+  _ ≤ ∑ P ∈ S.toFinset, (S.count P) * B ^ (p.natDegree - n) := by
           gcongr with P hP
           apply le_trans <| Nat.norm_cast_le _
           simp
-  _ = ↑(p.natDegree.choose n) * (B : ℝ) ^ (p.natDegree - n) := by
+  _ = (p.natDegree.choose n) * B ^ (p.natDegree - n) := by
           by_cases hB : B = 0
           by_cases hd : p.natDegree - n = 0
           · simp [S, hd, hB, Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd]
           · simp [hB, hd]
           · rw [← Finset.sum_mul]
-            simp only [mul_eq_mul_right_iff, pow_eq_zero_iff', NNReal.coe_eq_zero, hB, ne_eq,
-              false_and, or_false]
+            congr
             norm_cast
             simp only [← Nat.choose_symm h, S, mem_powersetCard, mem_toFinset, imp_self,
             implies_true, sum_count_eq_card, card_powersetCard]

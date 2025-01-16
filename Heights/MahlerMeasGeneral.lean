@@ -265,15 +265,16 @@ def funct (n : ℕ) (B : NNReal) :
     norm_cast
     exact Nat.one_le_iff_ne_zero.mpr (natAbs_ne_zero.mpr (leadingCoeff_ne_zero.mpr h_p))
   norm_cast
-  refine le_trans (bdd_coeff_of_bdd_roots_and_lead h_split (B:=B) (roots_le_of_mahler_measure_le_of_one_le_leading_coeff h_one_le bound) i) ?_
+  refine le_trans (bdd_coeff_of_bdd_roots_and_leading_coeff h_split i) ?_
   rw [mul_comm ‖(map (castRingHom ℂ) p).leadingCoeff‖₊, mul_assoc]
   conv => enter [2,2,2,1]; rw [Nat.add_comm]
   rw [Nat.add_sub_assoc (by linarith), pow_add, pow_one]
   gcongr
   · rw [h_deg_eq]
-    exact Nat.choose_le_choose (↑i) h_deg
+    exact Nat.choose_le_choose i h_deg
   · exact leading_coeff_le_of_mahler_measure_le bound
   · exact le_trans (one_le_mahler_measure_of_one_le_leading_coeff h_one_le) bound
+  · exact roots_le_of_mahler_measure_le_of_one_le_leading_coeff h_one_le bound
   · rw [h_deg_eq]
     exact h_deg
 

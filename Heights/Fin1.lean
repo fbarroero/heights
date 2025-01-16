@@ -6,7 +6,7 @@ namespace Polynomial
 
 variable {R : Type u} [Semiring R]
 
--- find another place for this?
+-- find another place for this? Finsupp
 @[simp]
 theorem zero_eq : {toFun := fun _ => 0, support := ∅, mem_support_toFun := by simp} =
     (0 : ℕ →₀ R) := rfl
