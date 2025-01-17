@@ -14,7 +14,7 @@ import Mathlib.RingTheory.Polynomial.Vieta
 In this file we prove an explicit bound on the `NNNorm` of the coefficients of a polynomial in terms
 of the `NNNorm` of its leading coefficient and the `NNNorm` of its roots.
 
-If `p` is the polynomial `a_d X ^ d + ... + a_0` then
+If `p` is the polynomial `a_d X ^ d + ... + a_0` then, for all `n ∈ {0, ..., d}`,
 `‖a_n‖₊ ≤ ‖a_d‖₊ * d.choose n * (sup ‖r‖₊) ^ (d - n)` where `r` ranges over the roots of `p`.
 
 ## Main results
@@ -25,13 +25,14 @@ the `NNNorm` of its leading coefficient and roots.
 -/
 namespace Polynomial
 
+--#count_heartbeats in
 open Classical Multiset in
-theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K] [CharZero K] {p : K[X]}
+theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p : K[X]}
     (hsplit : Splits (RingHom.id K) p) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * (p.natDegree).choose n *
     ((p.roots).map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
-  by_cases h₀ : p = 0; simp [h₀]
-  by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h]
+  by_cases h₀ : p = 0; simp [h₀] --exclude the zero polynomial
+  by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h] --may assume n ≤ p.natDegree
   rw [not_lt] at h
   simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, esymm,
     Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
@@ -50,7 +51,7 @@ theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K] [Ch
   _ = ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * B ^ (p.natDegree - n) := by
           apply Finset.sum_congr rfl
           intro P hP
-          simp_all [S, hP, Finset.prod_pow_eq_pow_sum]
+          simp_all [S, Finset.prod_pow_eq_pow_sum]
   _ ≤ ∑ P ∈ S.toFinset, (S.count P) * B ^ (p.natDegree - n) := by
           gcongr with P hP
           apply le_trans <| Nat.norm_cast_le _
@@ -58,7 +59,7 @@ theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K] [Ch
   _ = (p.natDegree.choose n) * B ^ (p.natDegree - n) := by
           by_cases hB : B = 0
           by_cases hd : p.natDegree - n = 0
-          · simp [S, hd, hB, Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd]
+          · simp [S, Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd]
           · simp [hB, hd]
           · rw [← Finset.sum_mul]
             congr
@@ -67,8 +68,16 @@ theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K] [Ch
             implies_true, sum_count_eq_card, card_powersetCard]
             congr
             exact splits_iff_card_roots.mp hsplit
+            /- simp only [← Finset.sum_mul, ← Nat.choose_symm h, mul_eq_mul_right_iff,
+            pow_eq_zero_iff', hB, ne_eq, false_and, or_false]
+            norm_cast
+            simp only [mem_powersetCard, mem_toFinset, imp_self, implies_true, sum_count_eq_card,
+              card_powersetCard, S]
+            congr
+            exact splits_iff_card_roots.mp hsplit -/
 
 end Polynomial
+
 
 
 --#min_imports
