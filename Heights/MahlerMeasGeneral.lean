@@ -9,7 +9,7 @@ import Mathlib.Data.Real.StarOrdered
 import Mathlib.RingTheory.Henselian
 import Mathlib.Tactic.ComputeDegree
 import Heights.poly_norm
-import Heights.fin1
+import Heights.Fin1
 
 /- namespace Multiset
 

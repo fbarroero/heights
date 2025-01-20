@@ -29,8 +29,8 @@ namespace Polynomial
 open Classical Multiset in
 theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p : K[X]}
     (hsplit : Splits (RingHom.id K) p) (n : ℕ) :
-    ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * (p.natDegree).choose n *
-    ((p.roots).map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
+    ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * p.natDegree.choose n *
+    (p.roots.map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀] --exclude the zero polynomial
   by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h] --may assume n ≤ p.natDegree
   rw [not_lt] at h
@@ -40,8 +40,8 @@ theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p
     mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
   apply le_trans <| nnnorm_sum_le _ _
   simp_rw [Finset.prod_multiset_count, nnnorm_mul, nnnorm_prod, nnnorm_pow]
-  let S := (p.roots).powersetCard (p.natDegree - n)
-  let B := ((p.roots).map (fun a ↦ ‖a‖₊)).sup
+  let S := p.roots.powersetCard (p.natDegree - n)
+  let B := (p.roots.map (fun a ↦ ‖a‖₊)).sup
   calc
       ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * ∏ x ∈ P.toFinset, ‖x‖₊ ^ P.count x
     ≤ ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * ∏ x ∈ P.toFinset, B ^ P.count x := by
