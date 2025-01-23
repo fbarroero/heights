@@ -1,132 +1,139 @@
-import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Algebra.Polynomial.Degree.Definitions
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Analysis.Normed.Group.Basic
-import Mathlib.FieldTheory.IsAlgClosed.Basic
-import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
-import Mathlib.RingTheory.Polynomial.Vieta
-import Mathlib.Tactic.ComputeDegree
-import Heights.poly_norm
-import Mathlib
+--to Mathlib.Analysis.Polynomial.MahlerMeasure.lean
 
+/-
+Copyright (c) 2025 Fabrizio Barroero. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Fabrizio Barroero
+-/
+import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.RingTheory.Polynomial.Vieta
+import Heights.Fin1
+
+/-!
+# Mahler Measure
+
+In this file ...
+
+## Main definitions
+
+
+## Main results
+
+- `bdd_coeff_of_bdd_roots_and_lead`: if a polynomial splits its coefficients are bounded in terms of
+the `NNNorm` of its leading coefficient and roots.
+
+-/
 namespace Polynomial
 
-noncomputable def MahlerMeasure (p : Polynomial ℂ) := ‖leadingCoeff p‖₊ *
-    (Multiset.map (fun (a : ℂ) ↦ max 1 ‖a‖₊) p.roots).prod
+section Definition_and_API
 
---instance : FunLike (FinitePlace K) K ℝ where
+variable {K : Type*} [NormedField K]
 
-@[simp]
-theorem MM_zero : MahlerMeasure 0 = 0 := by
-  simp only [MahlerMeasure, leadingCoeff_zero, nnnorm_zero, roots_zero, Multiset.map_zero,
-    Multiset.prod_zero, mul_one]
+noncomputable def MahlerMeasure (p : K[X]) := ‖p.leadingCoeff‖₊ *
+    ((p.roots).map (fun a ↦ max 1 ‖a‖₊)).prod
 
 @[simp]
-theorem MM_const (z : ℂ) : MahlerMeasure (C z) = ‖z‖₊ := by
-  simp only [MahlerMeasure, leadingCoeff_C, roots_C, Multiset.map_zero, Multiset.prod_zero, mul_one]
+theorem mahler_measure_zero : (0 : K[X]).MahlerMeasure = 0 := by simp [MahlerMeasure]
 
 @[simp]
-theorem MM_X : MahlerMeasure X = 1 := by
-  simp only [MahlerMeasure, monic_X, Monic.leadingCoeff, nnnorm_one, roots_X,
-    Multiset.map_singleton, nnnorm_zero, zero_le, sup_of_le_left, Multiset.prod_singleton, mul_one]
+theorem mahler_measure_one : (1 : K[X]).MahlerMeasure = 1 := by simp [MahlerMeasure]
 
 @[simp]
-theorem MM_linear (z₁ z₀ : ℂ) (h1 : z₁ ≠ 0) : MahlerMeasure (C z₁ * X - C z₀) = ‖z₁‖₊ * max 1 ‖z₀ / z₁‖₊ := by
-  simp only [MahlerMeasure, Complex.norm_eq_abs, norm_div]
-  have : (C z₁ * X - C z₀).leadingCoeff = z₁ := by
-    rw [leadingCoeff]
-    simp_all only [ne_eq, natDegree_sub_C, _root_.map_eq_zero, not_false_eq_true, natDegree_mul_X, natDegree_C,
-      zero_add, coeff_sub, coeff_mul_X, coeff_C_zero, coeff_C_succ, sub_zero]
-  rw [this]
-  simp only [mul_eq_mul_left_iff, _root_.map_eq_zero]
-  left
-  have : C z₁ * X - C z₀ = C z₁ * (X - C (z₀ / z₁)) := by
-    rw [mul_sub, ← C_mul, mul_div_cancel₀ z₀ h1]
-  have : (C z₁ * X - C z₀).roots = (X - C (z₀ / z₁)).roots := by
-    rw [this]
-    exact roots_C_mul (X - C (z₀ / z₁)) h1
-  simp_all only [ne_eq, leadingCoeff_mul, leadingCoeff_C, leadingCoeff_X_sub_C, mul_one,
-    not_false_eq_true, roots_C_mul, roots_X_sub_C, Multiset.map_singleton, nnnorm_div,
-    Multiset.prod_singleton, NNReal.coe_max, NNReal.coe_one, NNReal.coe_div, coe_nnnorm,
-    Complex.norm_eq_abs]
-
-theorem MM_2 : MahlerMeasure (X - C 2) = 2 := by
-  simp only [MahlerMeasure, leadingCoeff_X_sub_C, nnnorm_one, roots_X_sub_C, Multiset.map_singleton,
-    Complex.nnnorm_ofNat, Nat.one_le_ofNat, sup_of_le_right, Multiset.prod_singleton, one_mul]
+theorem mahler_measure_const (z : K) : (C z).MahlerMeasure = ‖z‖₊ := by simp [MahlerMeasure]
 
 @[simp]
-theorem MM_mul (p q : Polynomial ℂ) : MahlerMeasure (p * q) = MahlerMeasure p * MahlerMeasure q := by
-  simp only [MahlerMeasure, leadingCoeff_mul, nnnorm_mul]
-  rw [mul_assoc, mul_assoc, mul_eq_mul_left_iff]
-  norm_cast
-  rw[mul_left_comm (Multiset.map (fun x ↦ 1 ⊔ ‖x‖₊) p.roots).prod
-    _ _]
-  simp only [mul_eq_mul_left_iff, map_eq_zero, leadingCoeff_eq_zero]
-  by_cases hp : p = 0
-  · simp only [hp, zero_mul, roots_zero, Multiset.map_zero, Multiset.prod_zero, one_mul,
-    nnnorm_eq_zero, leadingCoeff_eq_zero, leadingCoeff_zero, nnnorm_zero, or_true]
-  · left
-    by_cases hq : q = 0
-    · simp only [hq, mul_zero, roots_zero, Multiset.map_zero, Multiset.prod_zero, mul_one,
-      leadingCoeff_zero, nnnorm_zero, or_true]
-    · left
-      rw [roots_mul (mul_ne_zero hp hq)]
-      simp only [Multiset.map_add, Multiset.prod_add]
+theorem mahler_measure_X : (X : K[X]).MahlerMeasure = 1 := by simp [MahlerMeasure]
 
-open Classical
+@[simp]
+theorem mahler_measure_C_mul_X_add_C {z₁ z₀ : K} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).MahlerMeasure =
+    ‖z₁‖₊ * max 1 ‖z₁⁻¹ * z₀‖₊ := by
+  simp [h1, MahlerMeasure, leadingCoeff, roots_C_mul_X_add_C z₀ h1]
 
-theorem Complex.bdd_coeff_of_bdd_roots_and_lead {p : Polynomial ℂ} {B : NNReal}
-    (h_bdd : (Multiset.map (fun (a : ℂ) ↦ ‖a‖₊) p.roots).sup ≤ B) (n : ℕ) :
-    ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * Nat.choose p.natDegree n * B ^ (p.natDegree - n) :=
-  Polynomial.bdd_coeff_of_bdd_roots_and_lead (IsAlgClosed.splits p) h_bdd n
+@[simp]
+theorem mahler_measure_degree_eq_one {p : K[X]} (h : p.degree = 1) : p.MahlerMeasure =
+    ‖p.coeff 1‖₊ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖₊ := by
+  rw [eq_X_add_C_of_degree_le_one (show degree p ≤ 1 by rw [h])]
+  simp [mahler_measure_C_mul_X_add_C (show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h)]
 
+@[simp]
+theorem mahler_measure_mul (p q : K[X]) : (p * q).MahlerMeasure =
+    p.MahlerMeasure * q.MahlerMeasure := by
+  by_cases hp : p = 0; simp [hp]
+  by_cases hq : q = 0; simp [hq]
+  simp [MahlerMeasure, mul_assoc, mul_left_comm (Multiset.map (fun x ↦ 1 ⊔ ‖x‖₊) p.roots).prod _ _,
+    roots_mul (mul_ne_zero hp hq)]
 
-theorem Northcott (n : ℕ) (B : NNReal) : Nat.card {p : Polynomial ℤ | p.natDegree ≤ n ∧
-    MahlerMeasure (map coe p) ≤ B} ≤ (2 * (Nat.floor B) + 1) ^ (n + 1) := by sorry
+lemma one_le_prod_max_one_nnnorm_roots (p : K[X]) :
+    1 ≤ (p.roots.map (fun a ↦ max 1 ‖a‖₊)).prod := by
+  apply Multiset.one_le_prod_of_one_le
+  simp only [Multiset.mem_map]
+  rintro _ ⟨a, _, rfl⟩
+  exact le_max_left 1 ‖a‖₊
 
+lemma leading_coeff_le_mahler_measure (p : K[X]) : ‖p.leadingCoeff‖₊ ≤ p.MahlerMeasure :=
+  le_mul_of_one_le_right' <| one_le_prod_max_one_nnnorm_roots p
 
+lemma prod_max_one_nnnorm_roots_le_mahler_measure_of_one_le_leading_coeff {p : K[X]}
+    (hlc : 1 ≤ ‖p.leadingCoeff‖₊) : (p.roots.map (fun a ↦ max 1 ‖a‖₊)).prod ≤ p.MahlerMeasure :=
+  le_mul_of_one_le_left' hlc
 
-theorem Kronecker {p : Polynomial ℤ} (h_monic : Monic p) (h_irr : Irreducible p)
-    (h_MM : MahlerMeasure (map coe p) = 1) : p = X ∨ ∃ n, p = cyclotomic n ℤ := by
-  sorry
+theorem roots_le_mahler_measure_of_one_le_leading_coeff {p : K[X]} (hlc : 1 ≤ ‖p.leadingCoeff‖₊) :
+    (Multiset.map (fun x ↦ ‖x‖₊) p.roots).sup ≤ p.MahlerMeasure := by
+  apply le_trans _ <| prod_max_one_nnnorm_roots_le_mahler_measure_of_one_le_leading_coeff hlc
+  simp only [Multiset.sup_le, Multiset.mem_map]
+  rintro _ ⟨x, hx, rfl⟩
+  apply le_trans <| le_max_right 1 _
+  refine Multiset.single_le_prod ?_ (1 ⊔ ‖x‖₊) (Multiset.mem_map_of_mem (fun x ↦ 1 ⊔ ‖x‖₊) hx)
+  simp only [Multiset.mem_map]
+  rintro _ ⟨_, _, rfl⟩
+  simp
 
+end Definition_and_API
 
---what's below is wrong
-theorem Kronecker' {p : Polynomial ℤ} (h_monic : Monic p) (h_irr : Irreducible p)
-    (h_MM : MahlerMeasure (map coe p) = 1) : p = X ∨ p = cyclotomic (natDegree p) ℤ := by
-  rw [or_iff_not_imp_left]
-  intro hp_ne_X
-  by_cases h_deg_p : p.natDegree = 0; simp_all only [Monic.natDegree_eq_zero_iff_eq_one,
-    natDegree_one, cyclotomic_zero]
-  convert_to map coe p = map coe (cyclotomic p.natDegree ℤ)
-  · exact ⟨fun a ↦ congrArg (map coe) a, fun a ↦ map_injective coe (RingHom.injective_int coe) a⟩
-  simp only [map_cyclotomic]
-  refine eq_of_dvd_of_natDegree_le_of_leadingCoeff ?_ ?_ ?_
-  refine Splits.dvd_of_roots_le_roots (IsAlgClosed.splits (map coe p)) (map_monic_ne_zero h_monic) ?_
-
-  sorry
-
-  sorry
-
-
-  sorry
-
-  /- have h_root1 : IsPrimitiveRoot (Complex.exp (2 * Real.pi * Complex.I * (1 / p.natDegree))) p.natDegree := by
-    rw [Complex.isPrimitiveRoot_iff _ _ h_deg_p]
-    by_cases h_deg_p₁ : p.natDegree = 1
-    · refine ⟨0, by omega, exists_prop.mpr ⟨(Nat.coprime_zero_left p.natDegree).mpr h_deg_p₁, ?_⟩⟩
-      simp only [CharP.cast_eq_zero, h_deg_p₁, Nat.cast_one, div_one, mul_zero, Complex.exp_zero,
-        ne_eq, one_ne_zero, not_false_eq_true, div_self, mul_one, Complex.exp_two_pi_mul_I]
-    · refine ⟨1, by omega, exists_prop.mpr ⟨Nat.gcd_one_left p.natDegree, ?_⟩⟩
-      rw [Nat.cast_one]
-  rw [cyclotomic_eq_prod_X_sub_primitiveRoots h_root1]
-  rw [Polynomial.eq_prod_roots_of_splits_id (p:=map coe p) (IsAlgClosed.splits (map coe p))] -/
-
-
-
--- https://mathoverflow.net/questions/10911/english-reference-for-a-result-of-kronecker
-
+/-!If `p` is the polynomial `a_d X ^ d + ... + a_0` then, for all `n ∈ {0, ..., d}`,
+`‖a_n‖₊ ≤ ‖a_d‖₊ * d.choose n * (sup ‖r‖₊) ^ (d - n)` where `r` ranges over the roots of `p`. -/
+open Classical Multiset in
+theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p : K[X]}
+    (hsplit : Splits (RingHom.id K) p) (n : ℕ) :
+    ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * p.natDegree.choose n *
+    (p.roots.map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
+  by_cases h₀ : p = 0; simp [h₀] --exclude the zero polynomial
+  by_cases h : p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt h] --may assume n ≤ p.natDegree
+  rw [not_lt] at h
+  simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, esymm,
+    Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
+    one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
+    mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
+  apply le_trans <| nnnorm_sum_le _ _
+  simp_rw [Finset.prod_multiset_count, nnnorm_mul, nnnorm_prod, nnnorm_pow]
+  let S := p.roots.powersetCard (p.natDegree - n)
+  let B := (p.roots.map (fun a ↦ ‖a‖₊)).sup
+  calc
+      ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * ∏ x ∈ P.toFinset, ‖x‖₊ ^ P.count x
+    ≤ ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * ∏ x ∈ P.toFinset, B ^ P.count x := by
+          gcongr with P hP z hz
+          simp only [mem_toFinset, mem_powersetCard, S] at hP
+          exact Multiset.le_sup <| mem_map_of_mem (fun a ↦ ‖a‖₊) <| mem_of_le hP.1 (mem_dedup.mp hz)
+  _ = ∑ P ∈ S.toFinset, ‖(S.count P : K)‖₊ * B ^ (p.natDegree - n) := by
+          apply Finset.sum_congr rfl
+          intro P hP
+          simp_all [S, Finset.prod_pow_eq_pow_sum]
+  _ ≤ ∑ P ∈ S.toFinset, (S.count P) * B ^ (p.natDegree - n) := by
+          gcongr with P hP
+          apply le_trans <| Nat.norm_cast_le _
+          simp
+  _ = (p.natDegree.choose n) * B ^ (p.natDegree - n) := by
+          by_cases hB : B = 0
+          by_cases hd : p.natDegree - n = 0
+          · simp [S, Nat.le_antisymm h <| Nat.le_of_sub_eq_zero hd]
+          · simp [hB, hd]
+          · rw [← Finset.sum_mul]
+            congr
+            norm_cast
+            simp only [← Nat.choose_symm h, S, mem_powersetCard, mem_toFinset, imp_self,
+            implies_true, sum_count_eq_card, card_powersetCard]
+            congr
+            exact splits_iff_card_roots.mp hsplit
 
 end Polynomial
