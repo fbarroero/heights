@@ -180,8 +180,6 @@ def funct (n : ℕ) (B : NNReal) :
   · rw [h_deg_eq]
     exact h_deg
 
-set_option maxHeartbeats 0
-
 theorem inj (n : ℕ) (B : NNReal) : (funct n B).Injective :=
   Subtype.map_injective _ Function.injective_id
 
@@ -197,8 +195,7 @@ theorem Northcott (n : ℕ) (B : NNReal) :
       apply Nat.finite_of_card_ne_zero _
       rw [h1]
       exact h2
-  have := Nat.card_le_card_of_injective (funct n B) (inj n B)
-  apply le_trans this
+  apply le_trans <| Nat.card_le_card_of_injective (funct n B) (inj n B)
   rw [h1]
 
 end Int

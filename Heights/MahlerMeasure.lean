@@ -79,7 +79,7 @@ lemma prod_max_one_nnnorm_roots_le_mahler_measure_of_one_le_leading_coeff {p : K
   le_mul_of_one_le_left' hlc
 
 theorem roots_le_mahler_measure_of_one_le_leading_coeff {p : K[X]} (hlc : 1 ≤ ‖p.leadingCoeff‖₊) :
-    (Multiset.map (fun x ↦ ‖x‖₊) p.roots).sup ≤ p.MahlerMeasure := by
+    (p.roots.map (fun x ↦ ‖x‖₊)).sup ≤ p.MahlerMeasure := by
   apply le_trans _ <| prod_max_one_nnnorm_roots_le_mahler_measure_of_one_le_leading_coeff hlc
   simp only [Multiset.sup_le, Multiset.mem_map]
   rintro _ ⟨x, hx, rfl⟩
@@ -95,7 +95,7 @@ end Definition_and_API
 `‖a_n‖₊ ≤ ‖a_d‖₊ * d.choose n * (sup ‖r‖₊) ^ (d - n)` where `r` ranges over the roots of `p`. -/
 open Classical Multiset in
 theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p : K[X]}
-    (hsplit : Splits (RingHom.id K) p) (n : ℕ) :
+    (hsplit : p.Splits (RingHom.id K)) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * p.natDegree.choose n *
     (p.roots.map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀] --exclude the zero polynomial
