@@ -101,4 +101,4 @@ noncomputable def ofFn' (n : ℕ) : (Fin (n + 1) → R) →+ R[X] where
     · simp [-ofFn_succ, h]
     · simp [getD_getElem?, h]
 
-namespace Int
+end Polynomial
