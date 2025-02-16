@@ -4,11 +4,14 @@ namespace Polynomial
 
 open Real
 
+noncomputable def logMahlerMeasure (p : ℂ[X]) :=
+    (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖(fun z : ℂ ↦ p.eval z) (circleMap 0 1 x)‖
 
-noncomputable def logMahlerMeasure {p : ℂ[X]} := (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖(fun z : ℂ ↦ p.eval z) (circleMap 0 1 x)‖
+theorem logMahlerMeasure_def (p : ℂ[X]) : p.logMahlerMeasure =
+    (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖(fun z : ℂ ↦ p.eval z) (circleMap 0 1 x)‖ := rfl
 
 @[simp]
-theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 :=by simp [logMahlerMeasure]
+theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure]
 
 @[simp]
 theorem logMahlerMeasure_const (z : ℂ) : (C z).logMahlerMeasure = log ‖z‖ := by
@@ -31,6 +34,10 @@ theorem logMahlerMeasure_monomial (n : ℕ) (z : ℂ) : (monomial n z).logMahler
   simp
 
 noncomputable def MahlerMeasure (p : ℂ[X]) := if p ≠ 0 then  exp (p.logMahlerMeasure) else 0
+
+theorem MahlerMeasure_def (p : ℂ[X]) : p.MahlerMeasure = if p ≠ 0 then
+    exp ((2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖(fun z : ℂ ↦ p.eval z) (circleMap 0 1 x)‖)
+    else 0 := rfl
 
 @[simp]
 theorem MahlerMeasure_zero : (0 : ℂ[X]).MahlerMeasure = 0 := by simp [MahlerMeasure]
@@ -74,13 +81,13 @@ theorem MahlerMeasure_prod (p q : ℂ[X]) : (p * q).MahlerMeasure =
   sorry
   sorry
 
-theorem logMahlerMeasure_def (p : ℂ[X]) : p.logMahlerMeasure =
+theorem logMahlerMeasure_eq (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖ + ((p.roots).map (fun a ↦ max 0 log ‖a‖)).sum := by sorry --use jensen
 
-theorem MahlerMeasure_def (p : ℂ[X]) : p.MahlerMeasure =
+theorem MahlerMeasure_eq (p : ℂ[X]) : p.MahlerMeasure =
     ‖p.leadingCoeff‖ * ((p.roots).map (fun a ↦ max 1 ‖a‖)).prod := by
   by_cases hp : p = 0; simp [hp]
-  simp only [MahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure_def,
+  simp only [MahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
     Complex.norm_eq_abs, Pi.sup_apply, Pi.zero_apply]
   rw [exp_add, exp_log (AbsoluteValue.pos Complex.abs <| leadingCoeff_ne_zero.mpr hp)]
   simp only [exp_multiset_sum, Multiset.map_map, Function.comp_apply, mul_eq_mul_left_iff,
@@ -100,7 +107,7 @@ theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z�
     rw [ext_iff] at h
     specialize h 1
     simp_all
-  simp only [MahlerMeasure, ne_eq, hpol, not_false_eq_true, ↓reduceIte, logMahlerMeasure_def,
+  simp only [MahlerMeasure, ne_eq, hpol, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
     Complex.norm_eq_abs, roots_C_mul_X_add_C z₀ h1, Pi.sup_apply, Pi.zero_apply,
     Multiset.map_singleton, map_neg_eq_map, AbsoluteValue.map_mul, map_inv₀, Multiset.sum_singleton,
     norm_mul, norm_inv]
@@ -109,7 +116,8 @@ theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z�
   by_cases hz₀ : z₀ = 0; simp [hz₀]
   congr
   · simp [leadingCoeff, h1]
-  · rw [exp_log (mul_pos (inv_pos.mpr <| AbsoluteValue.pos Complex.abs h1) <| AbsoluteValue.pos Complex.abs hz₀)]
+  · rw [exp_log (mul_pos (inv_pos.mpr <| AbsoluteValue.pos Complex.abs h1)
+      <| AbsoluteValue.pos Complex.abs hz₀)]
 
 @[simp]
 theorem MahlerMeasure_degree_eq_one {p :ℂ[X]} (h : p.degree = 1) : p.MahlerMeasure =
