@@ -1,4 +1,5 @@
 import Mathlib
+import Heights.ofFn
 
 namespace Polynomial
 
@@ -15,29 +16,23 @@ theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 := by simp [log
 
 @[simp]
 theorem logMahlerMeasure_const (z : ℂ) : (C z).logMahlerMeasure = log ‖z‖ := by
-  simp only [logMahlerMeasure, mul_inv_rev, eval_C, Complex.norm_eq_abs,
-    intervalIntegral.integral_const, sub_zero, smul_eq_mul]
-  ring_nf
-  rw [CommGroupWithZero.mul_inv_cancel π pi_ne_zero]
-  simp
+  field_simp [logMahlerMeasure]
 
 @[simp]
 theorem logMahlerMeasure_X : (X : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure]
 
 @[simp]
 theorem logMahlerMeasure_monomial (n : ℕ) (z : ℂ) : (monomial n z).logMahlerMeasure = log ‖z‖  := by
-  simp only [logMahlerMeasure, mul_inv_rev, eval_monomial, norm_mul, Complex.norm_eq_abs, norm_pow,
-    abs_circleMap_zero, abs_one, one_pow, mul_one, intervalIntegral.integral_const, sub_zero,
-    smul_eq_mul]
-  ring_nf
-  rw [CommGroupWithZero.mul_inv_cancel π pi_ne_zero]
-  simp
+  field_simp [logMahlerMeasure]
 
 noncomputable def MahlerMeasure (p : ℂ[X]) := if p ≠ 0 then  exp (p.logMahlerMeasure) else 0
 
 theorem MahlerMeasure_def (p : ℂ[X]) : p.MahlerMeasure = if p ≠ 0 then
     exp ((2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖(fun z : ℂ ↦ p.eval z) (circleMap 0 1 x)‖)
     else 0 := rfl
+
+theorem logMahlerMeasure_eq_log_MahlerMeasure {p : ℂ[X]} (h_p : p ≠ 0) :
+    p.logMahlerMeasure = log p.MahlerMeasure := by simp [logMahlerMeasure, MahlerMeasure, h_p]
 
 @[simp]
 theorem MahlerMeasure_zero : (0 : ℂ[X]).MahlerMeasure = 0 := by simp [MahlerMeasure]
@@ -50,9 +45,8 @@ theorem MahlerMeasure_const (z : ℂ) : (C z).MahlerMeasure = ‖z‖ := by
   simp only [MahlerMeasure, ne_eq, map_eq_zero, logMahlerMeasure_const, Complex.norm_eq_abs,
     ite_not]
   split_ifs with h
-  simp [h]
-  simp [h, exp_log]
-
+  · simp [h]
+  · simp [h, exp_log]
 
 @[simp]
 theorem MahlerMeasure_prod (p q : ℂ[X]) : (p * q).MahlerMeasure =
@@ -101,12 +95,7 @@ theorem MahlerMeasure_eq (p : ℂ[X]) : p.MahlerMeasure =
 @[simp]
 theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).MahlerMeasure =
     ‖z₁‖ * max 1 ‖z₁⁻¹ * z₀‖ := by
-  have hpol : C z₁ * X + C z₀ ≠ 0 := by
-    by_contra! h
-    apply h1
-    rw [ext_iff] at h
-    specialize h 1
-    simp_all
+  have hpol : C z₁ * X + C z₀ ≠ 0 := by simp [← degree_ne_bot, h1]
   simp only [MahlerMeasure, ne_eq, hpol, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
     Complex.norm_eq_abs, roots_C_mul_X_add_C z₀ h1, Pi.sup_apply, Pi.zero_apply,
     Multiset.map_singleton, map_neg_eq_map, AbsoluteValue.map_mul, map_inv₀, Multiset.sum_singleton,
@@ -124,5 +113,25 @@ theorem MahlerMeasure_degree_eq_one {p :ℂ[X]} (h : p.degree = 1) : p.MahlerMea
     ‖p.coeff 1‖₊ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖₊ := by
   rw [eq_X_add_C_of_degree_le_one (show degree p ≤ 1 by rw [h])]
   simp [show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h]
+
+@[simp]
+theorem logMahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).logMahlerMeasure =
+    log (‖z₁‖ * max 1 ‖z₁⁻¹ * z₀‖) := by
+  have hpol : C z₁ * X + C z₀ ≠ 0 := by simp [← degree_ne_bot, h1]
+  rw [logMahlerMeasure_eq_log_MahlerMeasure hpol, MahlerMeasure_C_mul_X_add_C h1]
+
+lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin p.natDegree, ‖(toFn p.natDegree) p i‖ := by
+  by_cases hp : p = 0; simp [hp]
+  simp only [MahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure, mul_inv_rev,
+    eval, circleMap, Complex.ofReal_one, one_mul, zero_add, Complex.norm_eq_abs, toFn,
+    AddMonoidHom.coe_mk, ZeroHom.coe_mk]
+  trans (rexp (log (∑ i : Fin p.natDegree, ‖(toFn p.natDegree) p i‖)))
+  gcongr
+  rw [← intervalIntegral.integral_const_mul]
+
+
+  sorry
+  sorry
+--Finset.sum univ (fun i : Fin p.natDegree ↦ ‖toFn p.natDegree p i‖)
 
 end Polynomial
