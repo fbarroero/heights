@@ -1,4 +1,16 @@
-import Mathlib
+/-
+Copyright (c) 2025 Fabrizio Barroero. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Fabrizio Barroero
+-/
+import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.Data.List.ToFinsupp
+/-!
+#
+
+## Main definitions
+
+-/
 
 namespace Polynomial
 
@@ -9,11 +21,11 @@ variable {R : Type u} [Semiring R]
 def toFn (n : ℕ) : R[X] →+ Fin n → R where
   toFun p := fun i ↦ p.coeff i
   map_add' x y := by
-    ext i
     simp
+    rfl
   map_zero' := by
-    ext i
     simp
+    rfl
 
 @[simp]
 theorem toFn_zero (n : ℕ) : toFn n (0 : R[X]) = 0 := by simp
@@ -65,7 +77,7 @@ theorem ofFn_sum_monomial {n : ℕ} (v : Fin n → R) : ofFn n v =
 
 theorem toFn_comp_ofFn_eq_id (n : ℕ) (v : Fin n → R) : toFn n (ofFn n v) = v := by simp [toFn]
 
-theorem leftInverse_toFn_ofFn (n : ℕ) : Function.LeftInverse (toFn n) (ofFn (R := R) n) :=
+/- theorem leftInverse_toFn_ofFn (n : ℕ) : Function.LeftInverse (toFn n) (ofFn (R := R) n) :=
   toFn_comp_ofFn_eq_id n
 
 theorem rightInverse_ofFn_toFn (n : ℕ) : Function.RightInverse (ofFn (R := R) n) (toFn n) :=
@@ -75,13 +87,13 @@ theorem hasLeftInverse_ofFn (n : ℕ) : Function.HasLeftInverse (ofFn (R := R) n
   Exists.intro (toFn n) (leftInverse_toFn_ofFn  n)
 
 theorem hasRightInverse_ofFn (n : ℕ) : Function.HasRightInverse (toFn (R := R) n) :=
-  Exists.intro (ofFn n) (leftInverse_toFn_ofFn  n)
+  Exists.intro (ofFn n) (leftInverse_toFn_ofFn  n) -/
 
 theorem injective_ofFn (n : ℕ) : Function.Injective (ofFn (R := R) n) :=
-  Function.LeftInverse.injective <| leftInverse_toFn_ofFn n
+  Function.LeftInverse.injective <| toFn_comp_ofFn_eq_id n
 
 theorem surjective_toFn (n : ℕ) : Function.Surjective (toFn (R := R) n) :=
-  Function.RightInverse.surjective <| rightInverse_ofFn_toFn n
+  Function.RightInverse.surjective <| toFn_comp_ofFn_eq_id n
 
 theorem ofFn_comp_toFn_eq_id_of_natDegree_le {n : ℕ} {p : R [X]} (h_deg : p.natDegree < n) :
     ofFn n (toFn n p) = p := by
@@ -96,6 +108,9 @@ theorem ofFn_comp_toFn_eq_id_of_natDegree_le {n : ℕ} {p : R [X]} (h_deg : p.na
 
 end ofFn
 
+#min_imports
+
+/-
 section ofFn'
 
 variable {R : Type u} [Semiring R]
@@ -194,3 +209,4 @@ open NumberField Polynomial
 noncomputable def aaaa (n : ℕ) (v : Fin n → K) : K[X] := (ofFn' n v)
 
 end withoutClassical
+ -/
