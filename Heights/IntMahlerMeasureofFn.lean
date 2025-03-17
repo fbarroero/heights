@@ -44,7 +44,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ 
     by_cases h : i < n
     · simp [ofFn, h]
     · rw [not_lt] at h
-      simp only [h, coeff_eq_zero_of_gt]
+      simp only [h, coeff_eq_zero_of_ge]
       rw [coeff_eq_zero_of_natDegree_lt]
       omega
   rw [Nat.card_eq_of_bijective f hfBij]
