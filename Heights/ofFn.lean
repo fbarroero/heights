@@ -3,7 +3,9 @@ Copyright (c) 2025 Fabrizio Barroero. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
-import Mathlib
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.Data.List.ToFinsupp
 /-!
 # `Polynomial.ofFn` and `Polynomial.toFn`
 
@@ -15,7 +17,6 @@ of its coefficients and vice versa. We prove some basic lemmas about these funct
 - `Polynomial.toFn n` associates a polynomial to the vector of its first `n` coefficients.
 - `Polynomial.ofFn n` associates a vector of lenght `n` to a polynomial that has the entries of the
   vector as coefficients.
-
 -/
 
 namespace Polynomial
@@ -28,10 +29,10 @@ variable {R : Type u} [Semiring R]
 def toFn (n : ℕ) : R[X] →+ Fin n → R where
   toFun p := fun i ↦ p.coeff i
   map_add' x y := by
-    simp
+    simp only [coeff_add]
     rfl
   map_zero' := by
-    simp
+    simp only [coeff_zero]
     rfl
 
 @[simp]
@@ -67,7 +68,6 @@ lemma ne_zero_of_ofFn_ne_zero {n : ℕ} {v : Fin n → R} (h : ofFn n v ≠ 0) :
   subst h
   simp
 
-
 /-- If `i < n` the `i`-th coefficient of `ofFn n v` is `v i`. -/
 @[simp]
 theorem coeff_eq_val_of_lt {n i : ℕ} (v : Fin n → R) (hi : i < n) :
@@ -92,7 +92,7 @@ theorem ofFn_degree_lt {n : ℕ} (v : Fin n → R) : (ofFn n v).degree < n := by
   · exact (natDegree_lt_iff_degree_lt h).mp
       <| ofFn_natDegree_lt (Nat.one_le_iff_ne_zero.mpr <| ne_zero_of_ofFn_ne_zero h) _
 
-theorem ofFn_sum_monomial {n : ℕ} (v : Fin n → R) : ofFn n v =
+theorem ofFn_eq_sum_monomial {n : ℕ} (v : Fin n → R) : ofFn n v =
     ∑ i : Fin n, Polynomial.monomial i (v i) := by
   by_cases h : n = 0; subst h; simp [ofFn]
   rw [as_sum_range' (ofFn n v) n <| ofFn_natDegree_lt (Nat.one_le_iff_ne_zero.mpr h) v,
