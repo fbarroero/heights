@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
 import Mathlib
-import Heights.ofFn
 /-!
 # Mahler Measure
 
@@ -72,14 +71,14 @@ theorem MahlerMeasure_const (z : ℂ) : (C z).MahlerMeasure = ‖z‖ := by
 lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
   -- Kebekus
   sorry
-
+--in PR
 lemma circleMap_eq_circleMap_iff_exists_int {a b r : ℝ} {z : ℂ} (h_r : r ≠ 0) : circleMap z r a = circleMap z r b ↔ ∃ (n : ℤ) , a * Complex.I = b * Complex.I + n * (2 * π * Complex.I) := by
   constructor
   · have : circleMap z r a = circleMap z r b  ↔ (Complex.exp (a * Complex.I)).arg = (Complex.exp (b * Complex.I)).arg := by
       simp [circleMap, Complex.ext_norm_arg_iff, h_r]
     simp [this, Complex.arg_eq_arg_iff, Complex.exp_eq_exp_iff_exists_int]
   · simp [circleMap, h_r, Complex.exp_eq_exp_iff_exists_int]
-
+--in PR
 lemma eq_of_circleMap_eq {a b r : ℝ} {z : ℂ} (h_r : r ≠ 0) (h_dist : |a - b| < 2 * π) (h : circleMap z r a = circleMap z r b) :
     a = b := by
   rw [circleMap_eq_circleMap_iff_exists_int h_r] at h
@@ -91,7 +90,7 @@ lemma eq_of_circleMap_eq {a b r : ℝ} {z : ℂ} (h_r : r ≠ 0) (h_dist : |a - 
   field_simp at h_dist
   norm_cast at h_dist
   simp [hn, Int.abs_lt_one_iff.mp h_dist]
-
+--in PR
 theorem injOn_circleMap_of_lt {a b r : ℝ} {z : ℂ} (h_r : r ≠ 0) (h_dist : |a - b| ≤ 2 * π) :
     (Ι a b).InjOn (circleMap z r) := by
   rintro _ ⟨_, _⟩ _ ⟨_, _⟩ h
@@ -161,7 +160,7 @@ theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z�
 
 @[simp]
 theorem MahlerMeasure_degree_eq_one {p :ℂ[X]} (h : p.degree = 1) : p.MahlerMeasure =
-    ‖p.coeff 1‖₊ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖₊ := by
+    ‖p.coeff 1‖ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
   rw [eq_X_add_C_of_degree_le_one (show degree p ≤ 1 by rw [h])]
   simp [show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h]
 
@@ -170,6 +169,40 @@ theorem logMahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C 
     log (‖z₁‖ * max 1 ‖z₁⁻¹ * z₀‖) := by
   have hpol : C z₁ * X + C z₀ ≠ 0 := by simp [← degree_ne_bot, h1]
   rw [logMahlerMeasure_eq_log_MahlerMeasure hpol, MahlerMeasure_C_mul_X_add_C h1]
+
+lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) :
+    1 ≤ (p.roots.map (fun a ↦ max 1 ‖a‖)).prod := by
+  refine Multiset.one_le_prod ?_
+  simp only [Multiset.mem_map]
+  rintro _ ⟨a, _, rfl⟩
+  exact le_max_left 1 ‖a‖
+
+lemma leading_coeff_le_mahlerMeasure (p : ℂ[X]) : ‖p.leadingCoeff‖ ≤ p.MahlerMeasure := by
+  rw [MahlerMeasure_eq]
+  exact le_mul_of_one_le_right (norm_nonneg p.leadingCoeff) (one_le_prod_max_one_norm_roots p)
+
+lemma prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]}
+    (hlc : 1 ≤ ‖p.leadingCoeff‖) : (p.roots.map (fun a ↦ max 1 ‖a‖)).prod ≤ p.MahlerMeasure := by
+  rw [MahlerMeasure_eq]
+  exact le_mul_of_one_le_left (le_trans zero_le_one (one_le_prod_max_one_norm_roots p)) hlc
+
+theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤ ‖p.leadingCoeff‖) :
+    (p.roots.map (fun x ↦ ‖x‖₊)).sup ≤ p.MahlerMeasure := by
+  apply le_trans _ <| prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff hlc
+  have : (Multiset.map (fun a ↦ 1 ⊔ ‖a‖) p.roots).prod = (Multiset.map (fun a ↦ 1 ⊔ ‖a‖₊) p.roots).prod := by
+    norm_cast
+    simp
+  rw [this]
+  simp only [NNReal.coe_le_coe, Multiset.sup_le, Multiset.mem_map, ne_eq, IsRoot.def,
+    forall_exists_index, and_imp]
+  intro b x hx hxb
+  rw [← hxb]
+  apply le_trans <| le_max_right 1 _
+  refine Multiset.single_le_prod ?_ (1 ⊔ ‖x‖₊) (Multiset.mem_map_of_mem (fun a ↦ 1 ⊔ ‖a‖₊) hx)
+  simp only [Multiset.mem_map]
+  rintro _ ⟨_, _, rfl⟩
+  simp
+
 
 lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖ := by
   by_cases hp : p = 0; simp [hp]

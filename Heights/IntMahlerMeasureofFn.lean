@@ -6,8 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
 import Heights.IntegralMahlerMeasure
-import Heights.ofFn
-
+import Heights.poly_norm
 namespace Polynomial
 
 section Int
@@ -33,7 +32,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ 
     intro i
     obtain ⟨val, prop⟩ := p
     simp only [mem_Icc, Box, Bm, Bp] at prop
-    simp only [coeff_eq_val_of_lt val i.2, Fin.cast_val_eq_self]
+    simp only [Fin.is_lt, ofFn_coeff_eq_val_of_lt, Fin.eta, Box, Bm, Bp]
     refine ⟨ceil_le.mp (prop.1 i), le_floor.mp (prop.2 i)⟩
     ⟩
   have hfBij : f.Bijective := by
@@ -44,7 +43,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ 
     by_cases h : i < n
     · simp [ofFn, h]
     · rw [not_lt] at h
-      simp only [h, coeff_eq_zero_of_ge]
+      simp only [h, ofFn_coeff_eq_zero_of_ge, BoxPoly, f, Box, Bm, g, Bp]
       rw [coeff_eq_zero_of_natDegree_lt]
       omega
   rw [Nat.card_eq_of_bijective f hfBij]
@@ -177,10 +176,10 @@ def funct (n : ℕ) (B : NNReal) :
   gcongr
   · rw [h_deg_eq]
     exact Nat.choose_le_choose i <| le_of_lt h_deg
-  · exact le_trans (leading_coeff_le_mahler_measure (p.map (castRingHom ℂ))) bound
+  · apply le_trans (leading_coeff_le_mahlerMeasure (p.map (castRingHom ℂ))) bound
   · apply le_trans _ bound
-    exact le_trans h_one_le (leading_coeff_le_mahler_measure (p.map (castRingHom ℂ)))
-  · exact le_trans (roots_le_mahler_measure_of_one_le_leading_coeff h_one_le) bound
+    exact le_trans h_one_le (leading_coeff_le_mahlerMeasure (p.map (castRingHom ℂ)))
+  · apply le_trans (roots_le_mahlerMeasure_of_one_le_leading_coeff h_one_le) bound
   · rw [h_deg_eq]
     omega
 
