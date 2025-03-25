@@ -3,9 +3,7 @@ Copyright (c) 2025 Fabrizio Barroero. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
-import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Algebra.Polynomial.Degree.Lemmas
-import Mathlib.Data.List.ToFinsupp
+import Mathlib
 /-!
 # `Polynomial.ofFn` and `Polynomial.toFn`
 
@@ -26,14 +24,7 @@ section toFn
 variable {R : Type u} [Semiring R]
 
 /-- `toFn n f` is the vector of the first `n` coefficients of the polynomial `f`. -/
-def toFn (n : ℕ) : R[X] →+ Fin n → R where
-  toFun p := fun i ↦ p.coeff i
-  map_add' x y := by
-    simp only [coeff_add]
-    rfl
-  map_zero' := by
-    simp only [coeff_zero]
-    rfl
+def toFn (n : ℕ) : R[X] →ₗ[R] Fin n → R := LinearMap.pi (fun i ↦ lcoeff R i)
 
 @[simp]
 theorem toFn_zero (n : ℕ) : toFn n (0 : R[X]) = 0 := by simp
@@ -100,7 +91,8 @@ theorem ofFn_eq_sum_monomial {n : ℕ} (v : Fin n → R) : ofFn n v =
   congr
   simp
 
-theorem toFn_comp_ofFn_eq_id (n : ℕ) (v : Fin n → R) : toFn n (ofFn n v) = v := by simp [toFn]
+theorem toFn_comp_ofFn_eq_id (n : ℕ) (v : Fin n → R) : toFn n (ofFn n v) = v := by
+  simp [toFn, LinearMap.pi, ofFn]
 
 /- theorem leftInverse_toFn_ofFn (n : ℕ) : Function.LeftInverse (toFn n) (ofFn (R := R) n) :=
   toFn_comp_ofFn_eq_id n
