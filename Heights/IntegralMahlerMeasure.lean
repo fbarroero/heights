@@ -211,16 +211,46 @@ lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖t
   rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖) ≤
       rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
     gcongr
-    apply intervalIntegral.integral_mono (le_of_lt two_pi_pos) (MahlerMeasure_integrable p) (by simp)
-    -- meglio almost everywhere per evitare radici di f?
+    apply intervalIntegral.integral_mono_ae (le_of_lt two_pi_pos) (MahlerMeasure_integrable p) (by simp)
+    simp [Filter.EventuallyLE]
+    refine Filter.eventually_iff_exists_mem.mpr ?_
+    let v := {x : ℝ | eval (circleMap 0 1 x) p ≠ 0}
+    use v
+    constructor
+    · simp [v]
+      sorry
+    · intro x hx
+      gcongr
+      simp only [eval, eval₂, RingHom.id_apply, toFn, LinearMap.pi_apply, lcoeff_apply, v]
+      trans p.sum (fun i a ↦ ‖a * (circleMap 0 1 x) ^ i‖)
+      · -- generalise this, triangular ineq for Polynomial.sum
+        simp only [sum, Complex.norm_mul, norm_pow, norm_circleMap_zero, abs_one, one_pow, mul_one,
+        v]
+        refine norm_sum_le_of_le p.support ?_
+        simp
+      · simp [Polynomial.sum]
+        apply le_of_eq
+
+        sorry
+    /- apply Set.Finite.measure_zero _ MeasureTheory.volume
+    let s := {x : ℝ | eval (circleMap 0 1 x) p = 0}
+    --have := (Multiset.finite_toSet p.roots)
+    apply Set.Finite.subset (s := s)
+    simp [s]
+
+    sorry -/
+    /- refine MeasureTheory.ae_le_of_ae_lt ?_
+    apply Set.Finite.measure_zero _ MeasureTheory.volume -/
+
+    /- -- meglio almost everywhere per evitare radici di f?
     intro x
     simp only
     by_cases h : eval (circleMap 0 1 x) p = 0
-    simp [h]
-    apply log_nonneg
+    · simp [h]
+      apply log_nonneg
 
-    sorry
-    sorry
+      sorry
+    · sorry -/
   _ ≤ rexp (log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
     gcongr
     simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
