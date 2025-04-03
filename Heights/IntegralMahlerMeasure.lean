@@ -203,6 +203,9 @@ theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤
   rintro _ ⟨_, _, rfl⟩
   simp
 
+open Finset in
+def range_to_fin {n : ℕ} (k : ℕ) (h : k ∈ range n) : Fin n :=
+  ⟨k, mem_range.mp h⟩
 
 lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖ := by
   by_cases hp : p = 0; simp [hp]
@@ -212,12 +215,16 @@ lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖t
       rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
     gcongr
     apply intervalIntegral.integral_mono_ae (le_of_lt two_pi_pos) (MahlerMeasure_integrable p) (by simp)
-    simp [Filter.EventuallyLE]
-    refine Filter.eventually_iff_exists_mem.mpr ?_
+
+
+    simp only [Filter.EventuallyLE, Filter.eventually_iff_exists_mem]
     let v := {x : ℝ | eval (circleMap 0 1 x) p ≠ 0}
     use v
     constructor
-    · simp [v]
+    · simp only [ne_eq, ← Filter.eventually_iff, v]
+      refine Set.Countable.ae_not_mem ?_ MeasureTheory.volume
+
+      --apply Set.Countable.image
       sorry
     · intro x hx
       gcongr
@@ -229,9 +236,19 @@ lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖t
         refine norm_sum_le_of_le p.support ?_
         simp
       · simp [Polynomial.sum]
+
+        /-
         apply le_of_eq
+        rw [Finset.sum_bij']
+
+        have : ∑ x : Fin (p.natDegree + 1), ‖p.coeff ↑x‖ = ∑ x : Finset.range (p.natDegree + 1), ‖p.coeff ↑x‖ := by
+          rw [Finset.sum_bij]
+          sorry
+         -/
+        --rw [← tsum_eq_sum', ← tsum_eq_sum']
 
         sorry
+
     /- apply Set.Finite.measure_zero _ MeasureTheory.volume
     let s := {x : ℝ | eval (circleMap 0 1 x) p = 0}
     --have := (Multiset.finite_toSet p.roots)
