@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
 import Heights.IntegralMahlerMeasure
+import Heights.poly_norm
 namespace Polynomial
 
 section Int
@@ -110,17 +111,17 @@ theorem bound {p : ℤ[X]} {n : ℕ} {B : NNReal} (h₀ : p ≠ 0) (h_deg : p.na
 open Int in
 theorem card1 {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
     Nat.card {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤
-    (n.choose i * B : ℝ)} =
-    ∏ i : Fin n, (2 * Nat.floor (n.choose i * B) + 1) := by
-  let B₁ := fun i : Fin n ↦ - (n.choose i * B  : ℝ)
-  let B₂ := fun i : Fin n ↦ (n.choose i * B : ℝ)
+    (n.choose i * B ^ (n - i) : ℝ)} =
+    ∏ i : Fin n, (2 * Nat.floor (n.choose i * B ^ (n - i)) + 1) := by
+  let B₁ := fun i : Fin n ↦ - (n.choose i * B ^ (n - i) : ℝ)
+  let B₂ := fun i : Fin n ↦ (n.choose i * B ^ (n - i) : ℝ)
   have h_B (i : Fin n) : ⌈B₁ i⌉ ≤ ⌊B₂ i⌋ := by
     simp only [ceil_neg, neg_le_self_iff, le_floor, cast_zero, B₁, B₂]
-    exact_mod_cast zero_le (↑(n.choose ↑i) * B)
+    exact_mod_cast zero_le (↑(n.choose ↑i) * B ^ (n - ↑i))
   zify
-  have (i : Fin n) : 0 ≤ (n.choose i) * B := by positivity
+  have (i : Fin n) : 0 ≤ (n.choose i) * B ^ (n - i) := by positivity
   --have := fun (i : Fin (n + 1)) ↦ Int.natCast_floor_eq_floor (this i)
-  have (i : Fin n) : (⌊(n.choose i) * B ⌋₊ : ℤ) = ⌊(n.choose i) * (B : ℝ)⌋ := by
+  have (i : Fin n) : (⌊(n.choose i) * B ^ (n - i)⌋₊ : ℤ) = ⌊(n.choose i) * (B : ℝ) ^ (n - i)⌋ := by
     apply natCast_floor_eq_floor
     exact this i
   conv => enter [2,2]; ext i; enter [1]; rw [this, two_mul, ← sub_neg_eq_add, ← ceil_neg]
@@ -137,44 +138,63 @@ theorem card1 {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
 open Int in
 def funct (n : ℕ) (B : NNReal) :
     {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).MahlerMeasure ≤ B} →
-    {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} := by
+    {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B ^ (n - i) : ℝ)} := by
   apply Subtype.map id
   intro p hp
   obtain ⟨h_deg, bound⟩ := hp
   rw [id_eq]
   refine ⟨h_deg, ?_⟩
+  by_cases h_p : p = 0; simp only [h_p, coeff_zero, abs_zero, cast_zero]; norm_cast; simp
+  intro i
+  by_cases h_i : p.natDegree < i; simp only [coeff_eq_zero_of_natDegree_lt h_i, abs_zero,
+    cast_zero]; norm_cast; simp
+  norm_cast
+  have h_norm : |p.coeff i| = (‖p.coeff i‖₊ : ℝ) := by
+    simp only [cast_abs, coe_nnnorm]
+    rfl
+  rw [h_norm]
   have h_deg_eq : (p.map (castRingHom ℂ)).natDegree =  p.natDegree := by
     simp only [natDegree_map_eq_iff, eq_intCast, ne_eq, cast_eq_zero, leadingCoeff_eq_zero]
     exact Decidable.not_or_of_imp (congrArg natDegree)
-  intro i
-  by_cases h_i : p.natDegree < i
-  · simp only [coeff_eq_zero_of_natDegree_lt h_i, abs_zero, cast_zero]
+  have h_nnnorm (j : ℕ) : ‖p.coeff j‖₊ = ‖(p.map (castRingHom ℂ)).coeff j‖₊ := by
+    rw [← Complex.nnnorm_intCast]
+    congr
+    simp
+  rw [h_nnnorm]
+  have h_split : Splits (RingHom.id ℂ) (p.map (castRingHom ℂ)) :=
+    IsAlgClosed.splits (p.map (castRingHom ℂ))
+  have h_one_le : 1 ≤ ‖(p.map (castRingHom ℂ)).leadingCoeff‖₊ := by
+    rw [leadingCoeff, ← h_nnnorm, h_deg_eq, ← NNReal.natCast_natAbs, ← leadingCoeff]
     norm_cast
-    exact zero_le (↑(n.choose ↑i) * B)
-  · rw [not_lt] at h_i
-    have h_norm : |p.coeff i| = (‖(p.map (castRingHom ℂ)).coeff i‖₊ : ℝ) := by
-      simp_all only [cast_abs, coeff_map, eq_intCast, Complex.nnnorm_intCast, coe_nnnorm]
-      rfl
-    rw [h_norm]
-    apply le_trans (norm_coeff_le_binom_mahlerMeasure i (map (castRingHom ℂ) p))
-    gcongr
-    · exact MahlerMeasure_nonneg (map (castRingHom ℂ) p)
-    · rw [h_deg_eq]
-      simp only [h_i, Nat.choose_symm]
-      apply Nat.choose_le_choose i <| le_of_lt h_deg
+    exact Nat.one_le_iff_ne_zero.mpr (natAbs_ne_zero.mpr (leadingCoeff_ne_zero.mpr h_p))
+  norm_cast
+  refine le_trans (bdd_coeff_of_bdd_roots_and_leading_coeff h_split i) ?_
+  rw [mul_comm ‖(p.map (castRingHom ℂ)).leadingCoeff‖₊, mul_assoc]
+  have : n - i = 1 + (n - 1 - i) := by omega
+  rw [this]
+  rw [pow_add, pow_one]
+  gcongr
+  · rw [h_deg_eq]
+    exact Nat.choose_le_choose i <| le_of_lt h_deg
+  · apply le_trans (leading_coeff_le_mahlerMeasure (p.map (castRingHom ℂ))) bound
+  · apply le_trans _ bound
+    exact le_trans h_one_le (leading_coeff_le_mahlerMeasure (p.map (castRingHom ℂ)))
+  · apply le_trans (roots_le_mahlerMeasure_of_one_le_leading_coeff h_one_le) bound
+  · rw [h_deg_eq]
+    omega
 
 theorem inj (n : ℕ) (B : NNReal) : (funct n B).Injective :=
   Subtype.map_injective _ Function.injective_id
 
 theorem Northcott {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
     Nat.card {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).MahlerMeasure ≤ B} ≤
-    ∏ i : Fin n, (2 * Nat.floor (Nat.choose n i * B) + 1) := by
+    ∏ i : Fin n, (2 * Nat.floor (Nat.choose n i * B ^ (n - i)) + 1) := by
   have h1 := card1 hn B
-  have h2 : ∏ i : Fin n, (2 * ⌊n.choose i * B⌋₊ + 1) ≠ 0 := by
+  have h2 : ∏ i : Fin n, (2 * ⌊n.choose i * B ^ (n - i)⌋₊ + 1) ≠ 0 := by
     rw [Finset.prod_ne_zero_iff]
     omega
   have : Finite {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤
-    (n.choose i * B : ℝ)} := by
+    (n.choose i * B ^ (n - i) : ℝ)} := by
       apply Nat.finite_of_card_ne_zero _
       rw [h1]
       exact h2
