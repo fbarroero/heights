@@ -21,30 +21,27 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ 
   let Bm := fun i ↦ ceil (B₁ i)
   let Box := Icc Bm Bp
   let BoxPoly := {p : ℤ[X] // p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i}
-  have hf (p : BoxPoly) : (fun i : Fin n ↦ p.val.coeff i) ∈ Box := by
+  have hf (p : BoxPoly) : (toFn n p) ∈ Box := by
     simp only [mem_Icc, Box, Bm, Bp]
-    obtain ⟨val, h_deg, bounds⟩ := p
-    refine ⟨fun i ↦ ceil_le.mpr (bounds i).1, fun i ↦ le_floor.mpr (bounds i).2⟩
-  let f : BoxPoly → Box := fun p => ⟨fun i ↦ p.val.coeff i, hf p⟩
-  let g : Box → BoxPoly := fun p => ⟨ofFn n p.val, by
+    refine ⟨fun i ↦ ceil_le.mpr (p.property.2 i).1, fun i ↦ le_floor.mpr (p.property.2 i).2⟩
+  let f : BoxPoly → Box := fun p => ⟨fun i ↦ (toFn n p) i, hf p⟩
+  /- have hg (v : Box) : (ofFn n v.val) ∈ BoxPoly := by
+    sorry
+  let g : Box → BoxPoly := fun v => ⟨ofFn n v, hg v⟩ -/
+  let g : Box → BoxPoly := fun p => ⟨ofFn n p, by
     refine ⟨ofFn_natDegree_lt hn p.val, ?_⟩
     intro i
     obtain ⟨val, prop⟩ := p
-    simp only [mem_Icc, Box, Bm, Bp] at prop
-    simp only [Fin.is_lt, ofFn_coeff_eq_val_of_lt, Fin.eta, Box, Bm, Bp]
+    simp only [mem_Icc, Box] at prop
+    simp only [Fin.is_lt, ofFn_coeff_eq_val_of_lt, Fin.eta]
     refine ⟨ceil_le.mp (prop.1 i), le_floor.mp (prop.2 i)⟩
     ⟩
   have hfBij : f.Bijective := by
-    refine Function.bijective_iff_has_inverse.mpr ⟨g, ?_, fun _ ↦ by simp [f, g]⟩
+    refine Function.bijective_iff_has_inverse.mpr ⟨g, ?_, fun _ ↦ by simp [f, g, toFn]⟩
     intro p
     ext i
     simp only [Bm, f, Box, Bp, g, BoxPoly]
-    by_cases h : i < n
-    · simp [ofFn, h]
-    · rw [not_lt] at h
-      simp only [h, ofFn_coeff_eq_zero_of_ge, BoxPoly, f, Box, Bm, g, Bp]
-      rw [coeff_eq_zero_of_natDegree_lt]
-      omega
+    rw [ofFn_comp_toFn_eq_id_of_natDegree_lt (p.property.1)]
   rw [Nat.card_eq_of_bijective f hfBij]
   simp only [Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
     card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
@@ -52,8 +49,7 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ 
   congr
   ext i
   specialize h_B i
-  rw [ofNat_toNat, add_sub_right_comm ⌊B₂ i⌋ 1 ⌈B₁ i⌉]
-  apply max_eq_left
+  rw [ofNat_toNat, add_sub_right_comm ⌊B₂ i⌋ 1 ⌈B₁ i⌉, max_eq_left]
   omega
 
 /- open Int in
@@ -163,9 +159,6 @@ def funct (n : ℕ) (B : NNReal) :
       simp only [h_i, Nat.choose_symm]
       apply Nat.choose_le_choose i <| le_of_lt h_deg
 
-theorem inj (n : ℕ) (B : NNReal) : (funct n B).Injective :=
-  Subtype.map_injective _ Function.injective_id
-
 theorem Northcott {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
     Nat.card {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).MahlerMeasure ≤ B} ≤
     ∏ i : Fin n, (2 * Nat.floor (Nat.choose n i * B) + 1) := by
@@ -178,7 +171,7 @@ theorem Northcott {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
       apply Nat.finite_of_card_ne_zero _
       rw [h1]
       exact h2
-  apply le_trans <| Nat.card_le_card_of_injective (funct n B) (inj n B)
+  apply le_trans <| Nat.card_le_card_of_injective (funct n B) (Subtype.map_injective _ Function.injective_id)
   rw [h1]
 
 end Int
