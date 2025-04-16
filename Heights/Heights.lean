@@ -1,6 +1,5 @@
-import Heights.ProductFormula
-import Mathlib.Algebra.Order.Group.Finset
-import Mathlib.LinearAlgebra.Projectivization.Basic
+
+import Mathlib
 
 open Function LinearAlgebra.Projectivization NumberField
 variable {K : Type*} [Field K] [NumberField K]

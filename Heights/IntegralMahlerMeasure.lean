@@ -80,9 +80,8 @@ theorem MahlerMeasure_nonneg (p : ℂ[X]) : 0 ≤ p.MahlerMeasure := by
 @[simp]
 theorem MahlerMeasure_eq_zero_iff (p : ℂ[X]) : p.MahlerMeasure = 0 ↔ p = 0 := by
   refine ⟨?_, by simp_all [MahlerMeasure_zero]⟩
-  contrapose!
-  intro h
-  simp [MahlerMeasure_def h]
+  contrapose
+  exact fun h ↦ by simp [MahlerMeasure_def h]
 
 lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
   -- Kebekus
@@ -103,7 +102,6 @@ theorem MahlerMeasure_prod (p q : ℂ[X]) : (p * q).MahlerMeasure =
   rw [MeasureTheory.ae_iff]
   apply Set.Finite.measure_zero _ MeasureTheory.volume
   simp only [Classical.not_imp]
-  --have hpq : p * q ≠ 0 := (mul_ne_zero_iff_right hq).mpr hp
   apply Set.Finite.of_finite_image (f := circleMap 0 1)
   · apply Set.Finite.subset (Multiset.finite_toSet (p * q).roots)
     rintro z ⟨_, ha, _⟩
@@ -123,9 +121,6 @@ theorem logMahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖₊ + ((p.roots).map (fun a ↦ max 0 log ‖a‖₊)).sum := by
   simp [logMahlerMeasure_eq]
 
-/- theorem logMahlerMeasure_eq' (p : ℂ[X]) : p.logMahlerMeasure =
-    log ‖p.leadingCoeff‖ + ∑ (a ∈ p.roots), (0 ⊔ (log ‖a‖)) := by sorry
- -/
 theorem MahlerMeasure_eq (p : ℂ[X]) : p.MahlerMeasure =
     ‖p.leadingCoeff‖ * ((p.roots).map (fun a ↦ max 1 ‖a‖)).prod := by
   by_cases hp : p = 0; simp [hp]
@@ -189,6 +184,7 @@ lemma prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[
   rw [MahlerMeasure_eq]
   exact le_mul_of_one_le_left (le_trans zero_le_one (one_le_prod_max_one_norm_roots p)) hlc
 
+-- not sure this is useful
 theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤ ‖p.leadingCoeff‖) :
     (p.roots.map (fun x ↦ ‖x‖₊)).sup ≤ p.MahlerMeasure := by
   apply le_trans _ <| prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff hlc

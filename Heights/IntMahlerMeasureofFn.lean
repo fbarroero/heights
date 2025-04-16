@@ -14,34 +14,30 @@ open Int
 
 open Finset in
 theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ : Fin n → ℝ}
-    (h_B : ∀ i, ceil (B₁ i) ≤ floor (B₂ i)) :
+    (h_B : ∀ i, ⌈B₁ i⌉ ≤ ⌊B₂ i⌋) :
     Nat.card {p : ℤ[X] // p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i} =
-    ∏ i : Fin n, (floor (B₂ i) - ceil (B₁ i) + 1)  := by
-  let Bp := fun i ↦ floor (B₂ i)
-  let Bm := fun i ↦ ceil (B₁ i)
+    ∏ i : Fin n, (⌊B₂ i⌋ - ⌈B₁ i⌉ + 1)  := by
+  let Bp := fun i ↦ ⌊B₂ i⌋
+  let Bm := fun i ↦ ⌈B₁ i⌉
   let Box := Icc Bm Bp
   let BoxPoly := {p : ℤ[X] // p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i}
-  have hf (p : BoxPoly) : (toFn n p) ∈ Box := by
+  let f : BoxPoly → Box := fun p => ⟨toFn n p , by
     simp only [mem_Icc, Box, Bm, Bp]
-    refine ⟨fun i ↦ ceil_le.mpr (p.property.2 i).1, fun i ↦ le_floor.mpr (p.property.2 i).2⟩
-  let f : BoxPoly → Box := fun p => ⟨fun i ↦ (toFn n p) i, hf p⟩
-  /- have hg (v : Box) : (ofFn n v.val) ∈ BoxPoly := by
-    sorry
-  let g : Box → BoxPoly := fun v => ⟨ofFn n v, hg v⟩ -/
+    refine ⟨fun i ↦ ceil_le.mpr (p.property.2 i).1, fun i ↦ le_floor.mpr (p.property.2 i).2⟩⟩
   let g : Box → BoxPoly := fun p => ⟨ofFn n p, by
     refine ⟨ofFn_natDegree_lt hn p.val, ?_⟩
     intro i
-    obtain ⟨val, prop⟩ := p
+    obtain ⟨_, prop⟩ := p
     simp only [mem_Icc, Box] at prop
     simp only [Fin.is_lt, ofFn_coeff_eq_val_of_lt, Fin.eta]
-    refine ⟨ceil_le.mp (prop.1 i), le_floor.mp (prop.2 i)⟩
-    ⟩
+    refine ⟨ceil_le.mp (prop.1 i), le_floor.mp (prop.2 i)⟩⟩
   have hfBij : f.Bijective := by
-    refine Function.bijective_iff_has_inverse.mpr ⟨g, ?_, fun _ ↦ by simp [f, g, toFn]⟩
-    intro p
-    ext i
-    simp only [Bm, f, Box, Bp, g, BoxPoly]
-    rw [ofFn_comp_toFn_eq_id_of_natDegree_lt (p.property.1)]
+    refine Function.bijective_iff_has_inverse.mpr ⟨g, ?_, ?_⟩
+    · intro p
+      simp [f, g, ofFn_comp_toFn_eq_id_of_natDegree_lt (p.property.1)]
+    · intro ⟨_, _⟩
+      ext i
+      simp_all [toFn, f, g]
   rw [Nat.card_eq_of_bijective f hfBij]
   simp only [Box, Nat.card_eq_finsetCard (Icc Bm Bp), Pi.card_Icc,
     card_Icc, Bp, Bm, prod_const, card_univ, Fintype.card_fin, sub_neg_eq_add]
@@ -49,7 +45,6 @@ theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ 
   congr
   ext i
   specialize h_B i
-  rw [ofNat_toNat, add_sub_right_comm ⌊B₂ i⌋ 1 ⌈B₁ i⌉, max_eq_left]
   omega
 
 /- open Int in
@@ -105,30 +100,20 @@ theorem bound {p : ℤ[X]} {n : ℕ} {B : NNReal} (h₀ : p ≠ 0) (h_deg : p.na
 
 open Int in
 theorem card1 {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
-    Nat.card {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤
-    (n.choose i * B : ℝ)} =
-    ∏ i : Fin n, (2 * Nat.floor (n.choose i * B) + 1) := by
+    Nat.card {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} =
+    ∏ i : Fin n, (2 * ⌊n.choose i * B⌋₊ + 1) := by
   let B₁ := fun i : Fin n ↦ - (n.choose i * B  : ℝ)
   let B₂ := fun i : Fin n ↦ (n.choose i * B : ℝ)
   have h_B (i : Fin n) : ⌈B₁ i⌉ ≤ ⌊B₂ i⌋ := by
     simp only [ceil_neg, neg_le_self_iff, le_floor, cast_zero, B₁, B₂]
     exact_mod_cast zero_le (↑(n.choose ↑i) * B)
   zify
-  have (i : Fin n) : 0 ≤ (n.choose i) * B := by positivity
-  --have := fun (i : Fin (n + 1)) ↦ Int.natCast_floor_eq_floor (this i)
   have (i : Fin n) : (⌊(n.choose i) * B ⌋₊ : ℤ) = ⌊(n.choose i) * (B : ℝ)⌋ := by
     apply natCast_floor_eq_floor
+    have (i : Fin n) : 0 ≤ (n.choose i) * B := by positivity
     exact this i
   conv => enter [2,2]; ext i; enter [1]; rw [this, two_mul, ← sub_neg_eq_add, ← ceil_neg]
-  have := card_eq_of_natDegree_le_of_coeff_le hn h_B
-  simp [B₁, B₂] at this
-  rw [← this]
-  congr
-  ext p
-  refine and_congr (by norm_cast) ?_
-  refine forall_congr' ?_
-  intro i
-  rw [abs_le]
+  simp [← card_eq_of_natDegree_le_of_coeff_le hn h_B, B₁, B₂, abs_le]
 
 open Int in
 def funct (n : ℕ) (B : NNReal) :
@@ -136,7 +121,7 @@ def funct (n : ℕ) (B : NNReal) :
     {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} := by
   apply Subtype.map id
   intro p hp
-  obtain ⟨h_deg, bound⟩ := hp
+  obtain ⟨h_deg, _⟩ := hp
   rw [id_eq]
   refine ⟨h_deg, ?_⟩
   have h_deg_eq : (p.map (castRingHom ℂ)).natDegree =  p.natDegree := by
