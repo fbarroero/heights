@@ -124,7 +124,7 @@ theorem foo (s : Finset β) (f : β → ℚ) : (s.gcd fun i ↦ (s.lcm fun i ↦
 
   --apply Finset.induction_on
 
-theorem primitive' (p : ℚ[X]) (hp : p.Monic) : p.erase_denom.IsPrimitive := by
+theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_denom.IsPrimitive := by
   rw [isPrimitive_iff_isUnit_of_C_dvd]
   by_contra! h
   simp only [C_dvd_iff_dvd_coeff] at h
@@ -179,7 +179,6 @@ theorem primitive' (p : ℚ[X]) (hp : p.Monic) : p.erase_denom.IsPrimitive := by
     refine Nat.dvd_div_of_mul_dvd ?_
     rw [mul_comm, ← Nat.dvd_div_iff_mul_dvd (hlcm i)]
     exact hP6
-
   have hP8 : p.lcm_den_poly ∣ p.lcm_den_poly / P := by
     apply Finset.lcm_dvd
     intro i hi
@@ -189,78 +188,26 @@ theorem primitive' (p : ℚ[X]) (hp : p.Monic) : p.erase_denom.IsPrimitive := by
   rw [Nat.dvd_div_iff_mul_dvd hP3, mul_comm, ← Nat.dvd_div_iff_mul_dvd (Nat.dvd_refl p.lcm_den_poly), Nat.div_self hlcm_pos] at hP8
   simp_all [Nat.Prime.ne_one]
 
+end Polynomial
 
+namespace NumberField
 
-theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_denom.IsPrimitive := by
-  rw [isPrimitive_iff_content_eq_one, content, erase_denom_coeff', lcm_den_poly, erase_denom_support]
-  have : p.support.Nonempty := by
-    sorry
-  refine' Finset.Nonempty.cons_induction _ _ this
-  · simp
-    sorry
-  · sorry
-  --induction p.support using Finset.Nonempty.cons_induction
-  /- induction p using Polynomial.induction_on with
-  | C a =>
-    simp only [Monic, leadingCoeff_C] at hp
-    simp only [support_C (ne_zero_of_eq_one hp), Finset.lcm_singleton, coeff_C_zero, normalize_eq,
-      Finset.gcd_singleton, ne_eq, natCast_eq_zero, Rat.den_ne_zero, not_false_eq_true,
-      EuclideanDomain.div_self, one_mul]
-    simp [hp]
-  | add p q hp hq =>
+variable {K : Type*} [Field K] [NumberField K] [Algebra ℚ K] (x : K) (hx : IsIntegral ℚ x)
 
-    sorry
-  | monomial n a _ => sorry -/
-
-
-  --refine Int.dvd_antisymm ?_ Int.one_nonneg ?_ ?_
-
-
-
-  --rw [foo]
-
-  --exact foo p.support p.coeff
-
-  --by_contra! h
-  --have : ∃ a, Nat.Prime a ∧  ∣  (p.erase_denom.support.gcd fun i ↦ ↑p.lcm_den_poly / ↑(p.coeff i).den * (p.coeff i).num) := by
-  /- rw [isPrimitive_iff_isUnit_of_C_dvd]
-  simp_rw [C_dvd_iff_dvd_coeff, erase_denom_coeff']
-  rintro r hr -/
-
-
-  /-
-
-
-  rw [erase_denom_eq, isPrimitive_iff_isUnit_of_C_dvd]
-  conv => ext r; enter [1]; rw [C_dvd_iff_dvd_coeff]; ext i; enter [2]; rw [finset_sum_coeff];
-  --simp_rw [C_dvd_iff_dvd_coeff]
-  simp only [finset_sum_coeff, coeff_monomial]
-
-  intro r hr -/
-  /- rw [isPrimitive_iff_content_eq_one]
-  have := content_dvd_coeff (p := p.erase_denom)
-  by_contra!
-  --simp at this
-  simp [content] at this
-   -/
-/-
-  simp only [IsPrimitive, eq_intCast, erase_denom]
-  rw [ofFn_eq_sum_monomial]
-
-
-  intro r hr -/
-
-  /- have h (i : Fin (p.natDegree + 1)) : C r ∣ C (p.lcm_den_poly / (p.coeff i).den * (p.coeff i).num) := by
-    simp only [eq_intCast, cast_mul]
-
-    sorry
-  simp [ofFn] at hr -/
-
-
-
-
-variable {K : Type*} [Field K] [Algebra ℚ K] (x : K) (hx : IsIntegral ℚ x)
+open Polynomial
 
 noncomputable def Intminpoly : ℤ[X] := erase_denom (minpoly ℚ x)
 
-end Polynomial
+theorem equal {x : K} (hpol : ((minpoly ℚ x).map (algebraMap ℚ K)).Splits (RingHom.id K)) :
+    (Intminpoly x).leadingCoeff =  ∏ᶠ w : FinitePlace K, max 1 (w x) := by
+  have h_poleq := eq_prod_roots_of_splits_id hpol
+  simp at h_poleq
+  have h (w : FinitePlace K) : w ((Intminpoly x).leadingCoeff) *
+    (Multiset.map (fun a ↦ max 1 (w a) ) (map (algebraMap ℚ K) (minpoly ℚ x)).roots).prod = 1 := by
+
+    sorry
+
+  sorry
+
+
+end NumberField
