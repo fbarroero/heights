@@ -4,7 +4,7 @@ namespace Polynomial
 
 --https://kconrad.math.uconn.edu/blurbs/ringtheory/gaussnormlemma.pdf
 
-variable {R α F : Type*} [Semiring R] [Semiring α] [LinearOrder α] --[SemilatticeSup α]
+variable {R α : Type*} [Semiring R] [Semiring α] [LinearOrder α] --[SemilatticeSup α]
  (f : AbsoluteValue R α) (hna : IsNonarchimedean f)
 
 theorem sup'_nonneg_of_ne_zero {p : R[X]} (h : p ≠ 0) :
