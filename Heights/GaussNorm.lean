@@ -34,6 +34,18 @@ theorem GaussNorm_nonneg (p : R[X]) : 0 ≤ GaussNorm f p := by
     exact ⟨p.natDegree, by simp_all⟩
   · simp [hp]
 
+@[simp]
+theorem GaussNorm_C (r : R) : GaussNorm f (Polynomial.C r) = f r := by
+  by_cases hr : r = 0
+  · simp [hr]
+  · simp_all [GaussNorm, Polynomial.support_C]
+
+@[simp]
+theorem GaussNorm_monomial (n : ℕ) (r : R) : GaussNorm f (Polynomial.monomial n r) = f r := by
+  by_cases hr : r = 0
+  · simp [hr]
+  · simp_all [GaussNorm, Polynomial.support_monomial]
+
 @[simp] --TODO: golf
 theorem max_eq_zero_iff (p : R[X]) : p.GaussNorm f = 0 ↔ p = 0 := by
   simp only [GaussNorm, support_nonempty, ne_eq, dite_eq_right_iff]
@@ -60,18 +72,22 @@ theorem coeff_le_GaussNorm (p : R[X]) (i : ℕ) :
     refine ⟨i, mem_support_iff.mp h, le_refl (f (p.coeff i))⟩
   · simp [not_mem_support_iff.mp h]
 
+
 include hna in
 theorem isNonarchimedean_GaussNorm [AddLeftMono α] /- [IsDomain R] [AddLeftMono α] [MulPosMono α] [PosMulMono α]  -/:
     IsNonarchimedean (GaussNorm f) := by
   intro p q
-  by_cases hpq : p + q = 0;
-  · simp [hpq, le_max_of_le_left <| GaussNorm_nonneg f p]
-  ·
-    sorry
+  by_cases hp : p = 0; simp [hp]
+  by_cases hq : q = 0; simp [hq]
+  by_cases hpq : p + q = 0; simp [hpq]
+  simp only [GaussNorm, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, coeff_add, hp,
+    hq, Finset.sup'_le_iff, mem_support_iff]
+  intro b hcoeff
+  apply le_trans (hna (p.coeff b) (q.coeff b))
+  apply max_le_max <;>
+  apply coeff_le_sup
 
-
-
-noncomputable def GaussNormAbs [IsDomain R] [AddLeftMono α] [MulPosMono α] [PosMulMono α] : AbsoluteValue R[X] α where
+noncomputable def GaussNormAbs [IsDomain R] [ IsStrictOrderedRing α] [MulPosMono α] [PosMulMono α] : AbsoluteValue R[X] α where
   toFun := GaussNorm f
   map_mul' := by --Finish this
     intro p q
@@ -92,20 +108,17 @@ noncomputable def GaussNormAbs [IsDomain R] [AddLeftMono α] [MulPosMono α] [Po
       · apply sup'_nonneg_of_ne_zero
       · apply coeff_le_sup
       · apply coeff_le_sup
-
-     /-  calc
-        f ((p * q).coeff b) ≤ f (p.coeff b) * f (q.coeff b) := by
-
-          sorry
-        _ ≤ (p.support.sup' hp fun i ↦ f (p.coeff i)) * q.support.sup' hq fun i ↦ f (q.coeff i) := by
-          sorry -/
     ·
+
       sorry
   nonneg' := fun x ↦ GaussNorm_nonneg f x
   eq_zero' := fun p ↦ max_eq_zero_iff f p
   add_le' := by
     intro p q
-    by_cases hp : p = 0; simp [hp]
+    apply IsNonarchimedean.add_le
+    exact fun x ↦ GaussNorm_nonneg f x
+    exact isNonarchimedean_GaussNorm f hna
+    /- by_cases hp : p = 0; simp [hp]
     by_cases hq : q = 0; simp [hq]
     by_cases hpq : p + q = 0;
     · simp only [hpq, GaussNorm_zero]
@@ -116,9 +129,7 @@ noncomputable def GaussNormAbs [IsDomain R] [AddLeftMono α] [MulPosMono α] [Po
       coeff_add, hp, hq, Finset.sup'_le_iff, mem_support_iff]
       intro b hcoeff
       apply le_trans <| AbsoluteValue.add_le f (p.coeff b) (q.coeff b)
-      exact add_le_add (coeff_le_sup f (by simp [hp]) b) (coeff_le_sup f (by simp [hq]) b)
-
-
+      exact add_le_add (coeff_le_sup f (by simp [hp]) b) (coeff_le_sup f (by simp [hq]) b) -/
 
 end Polynomial
 

@@ -14,9 +14,6 @@ In this file ...
 
 ## Main results
 
-- `bdd_coeff_of_bdd_roots_and_lead`: if a polynomial splits its coefficients are bounded in terms of
-the `NNNorm` of its leading coefficient and roots.
-
 -/
 
 namespace Polynomial
