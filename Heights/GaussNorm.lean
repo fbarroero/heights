@@ -9,16 +9,14 @@ variable {R α : Type*} [Semiring R] [Semiring α] [LinearOrder α]
 
 theorem sup'_nonneg_of_ne_zero {p : R[X]} (h : p.support.Nonempty) :
     0 ≤ p.support.sup' h fun i ↦ f (p.coeff i) := by
-  simp only [Finset.le_sup'_iff, mem_support_iff, ne_eq, apply_nonneg, and_true]
+  simp only [Finset.le_sup'_iff]
   exact ⟨p.natDegree, by simp_all⟩
 
 theorem coeff_le_sup {p : R[X]} (h : p.support.Nonempty) (i : ℕ) :
     f (p.coeff i) ≤ p.support.sup' h (fun j ↦ f (p.coeff j)) := by
   by_cases hs : i ∈ p.support;
   · exact Finset.le_sup' (fun j ↦ f (p.coeff j)) hs
-  · simp_all [mem_support_iff, sup'_nonneg_of_ne_zero f h]
-
---variable [DecidableEq R]
+  · simp_all [sup'_nonneg_of_ne_zero f h]
 
 def GaussNorm : R[X] → α := fun p ↦ if h : p.support.Nonempty then p.support.sup' h fun i ↦
     (f (p.coeff i)) else 0
@@ -28,28 +26,37 @@ theorem GaussNorm_zero : GaussNorm f 0 = 0 := by simp [GaussNorm]
 
 @[simp]
 theorem GaussNorm_nonneg (p : R[X]) : 0 ≤ GaussNorm f p := by
-  simp only [GaussNorm, ne_eq, dite_not]
+  simp only [GaussNorm]
   by_cases hp : p.support.Nonempty
-  · simp only [hp, ↓reduceDIte, Finset.le_sup'_iff, mem_support_iff, ne_eq, apply_nonneg, and_true]
-    exact ⟨p.natDegree, by simp_all⟩
+  · simp [hp, sup'_nonneg_of_ne_zero, -Finset.le_sup'_iff]
   · simp [hp]
 
 @[simp]
-theorem GaussNorm_C (r : R) : GaussNorm f (Polynomial.C r) = f r := by
+theorem GaussNorm_C (r : R) : GaussNorm f (C r) = f r := by
   by_cases hr : r = 0
   · simp [hr]
-  · simp_all [GaussNorm, Polynomial.support_C]
+  · simp_all [GaussNorm, support_C]
 
 @[simp]
 theorem GaussNorm_monomial (n : ℕ) (r : R) : GaussNorm f (Polynomial.monomial n r) = f r := by
   by_cases hr : r = 0
   · simp [hr]
-  · simp_all [GaussNorm, Polynomial.support_monomial]
+  · simp_all [GaussNorm, support_monomial]
 
 @[simp] --TODO: golf
 theorem max_eq_zero_iff (p : R[X]) : p.GaussNorm f = 0 ↔ p = 0 := by
-  simp only [GaussNorm, support_nonempty, ne_eq, dite_eq_right_iff]
+  simp only [GaussNorm, support_nonempty, dite_eq_right_iff]
   refine ⟨?_, fun hp _ ↦ by simp [hp]⟩
+  --
+  /- intro hp
+  refine leadingCoeff_eq_zero.mp ?_
+  rw [← f.eq_zero']
+  simp only [MulHom.toFun_eq_coe, AbsoluteValue.coe_toMulHom]
+  by_cases h : p = 0; simp [h]
+  specialize hp h
+  have : p.natDegree ∈ p.support := by exact natDegree_mem_support_of_nonzero h
+  have := Finset.le_sup' (α := α) (fun n ↦ f (p.coeff n)) (natDegree_mem_support_of_nonzero h) -/
+
   contrapose!
   intro hp
   simp_all only [ne_eq, not_false_eq_true, exists_true_left]
@@ -74,8 +81,7 @@ theorem coeff_le_GaussNorm (p : R[X]) (i : ℕ) :
 
 
 include hna in
-theorem isNonarchimedean_GaussNorm [AddLeftMono α] /- [IsDomain R] [AddLeftMono α] [MulPosMono α] [PosMulMono α]  -/:
-    IsNonarchimedean (GaussNorm f) := by
+theorem isNonarchimedean_GaussNorm [AddLeftMono α] : IsNonarchimedean (GaussNorm f) := by
   intro p q
   by_cases hp : p = 0; simp [hp]
   by_cases hq : q = 0; simp [hq]
@@ -130,6 +136,10 @@ noncomputable def GaussNormAbs [IsDomain R] [ IsStrictOrderedRing α] [MulPosMon
       intro b hcoeff
       apply le_trans <| AbsoluteValue.add_le f (p.coeff b) (q.coeff b)
       exact add_le_add (coeff_le_sup f (by simp [hp]) b) (coeff_le_sup f (by simp [hq]) b) -/
+
+
+
+
 
 end Polynomial
 
