@@ -1,3 +1,15 @@
--- This module serves as the root of the `Heights` library.
--- Import modules here that should be built as part of the library.
-import «Heights».Basic
+import Heights.Basic
+import Heights.Demo
+import Heights.GaussNorm
+import Heights.GaussNormC.Polynomial.GaussNormC
+import Heights.GaussNormC.PowerSeries.GaussNormC
+import Heights.GaussNormSeries
+import Heights.Heights
+import Heights.IntMahlerMeasureofFn
+import Heights.IntMahlerMeasureofFn_old
+import Heights.IntMinPoly
+import Heights.IntMinPolyOld
+import Heights.IntegralMahlerMeasure
+import Heights.Mwe
+import Heights.poly_max_norm
+import Heights.poly_norm

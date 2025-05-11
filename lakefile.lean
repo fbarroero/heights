@@ -14,3 +14,5 @@ require mathlib from git
 @[default_target]
 lean_lib «Heights» where
   -- add any library configuration options here
+
+require "chasenorman" / "Canonical"
