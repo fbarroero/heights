@@ -121,7 +121,7 @@ lemma le_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] (p : R[X]) {
   apply PowerSeries.le_gaussNormC
   simpa using aux_bdd v c p
 
-/- theorem isNonarchimedean_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
+theorem isNonarchimedean_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
     (hna : IsNonarchimedean v) {c : ℝ} (hc : 0 ≤ c) : IsNonarchimedean (gaussNormC v c) := by
   intro p q
   by_cases hp : p = 0; simp [hp]
@@ -139,7 +139,28 @@ lemma le_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] (p : R[X]) {
     rw [max_mul_of_nonneg _ _ (pow_nonneg hc _)]
   _ ≤ max (gaussNormC v c p) (gaussNormC v c q) := by
     apply max_le_max <;>
-    exact le_gaussNormC v _ hc i -/
+    exact le_gaussNormC v _ hc i
+
+theorem gaussNormC_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) /- {c : ℝ} (hc : 0 ≤ c) -/ :
+    (p * q).gaussNormC v c = p.gaussNormC v c * q.gaussNormC v c := by
+  by_cases hpq : ¬ p * q = 0
+  · have h_supp_p : p.support.Nonempty := support_nonempty.mpr <| left_ne_zero_of_mul hpq
+    have h_supp_q : q.support.Nonempty := support_nonempty.mpr <| right_ne_zero_of_mul hpq
+    simp only [gaussNormC, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, h_supp_p,
+      h_supp_q]
+    apply le_antisymm
+    · simp only [Finset.sup'_le_iff, mem_support_iff, ne_eq]
+      intro i hi
+      rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+      let g := fun k ↦ p.coeff (k, i - k).1 * q.coeff (k, i - k).2
+      --have := IsNonarchimedean.finset_image_add_of_nonempty hna g Finset.nonempty_range_succ
+      sorry
+
+    · sorry
+  · rw [not_not, mul_eq_zero] at hpq
+    cases hpq with
+    | inl h => simp [h]
+    | inr h => simp [h]
 
 end Polynomial
 

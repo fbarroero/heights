@@ -1,5 +1,5 @@
+import Heights.AbsoluteValue.adicAbv
 import Heights.Basic
-import Heights.Demo
 import Heights.GaussNorm
 import Heights.GaussNormC.Polynomial.GaussNormC
 import Heights.GaussNormC.PowerSeries.GaussNormC
