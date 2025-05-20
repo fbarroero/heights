@@ -21,7 +21,8 @@ def adicAbv {b : NNReal} (hb : 1 < b) : AbsoluteValue K ℝ where
   map_mul' _ _ := by simp
   nonneg' _ := NNReal.zero_le_coe
   eq_zero' _ := by simp
-  add_le' x y := (isNonanchimedean_toNNNReal_valuation v hb).add_le (fun x ↦ zero_le ((toNNReal (ne_zero_of_lt hb)) (v.valuation K x)))
+  add_le' _ _ := (isNonanchimedean_toNNNReal_valuation v hb).add_le
+    (fun x ↦ zero_le ((toNNReal (ne_zero_of_lt hb)) (v.valuation K x)))
 
 end IsDedekindDomain.HeightOneSpectrum
 
