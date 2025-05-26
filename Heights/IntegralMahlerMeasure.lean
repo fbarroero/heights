@@ -5,21 +5,29 @@ Authors: Fabrizio Barroero
 -/
 import Mathlib
 /-!
-# Mahler Measure
+# Mahler Measure of complex polynomials
 
-In this file ...
+In this file we define the Mahler measure of a polynomial over `ℂ[X]` and prove some basic
+properties.
 
 ## Main definitions
 
+- `Polynomial.logMahlerMeasure p`: the logarithmic Mahler measure of a polynomial `p` defined as
+`(2 * π)⁻¹ * ∫ x ∈ (0, 2 * π), log ‖p (e ^ (i * x))‖`.
+- `Polynomial.MahlerMeasure p`: the (exponential) Mahler measure of a polynomial `p`, which is equal
+to `e ^ (logMahlerMeasure p)` if `p` is nonzero, and `0` otherwise.
 
 ## Main results
 
+- `Polynomial.MahlerMeasure_mul`: the Mahler measure of the product of two polynomials is the
+product of their Mahler measures.
 -/
 
 namespace Polynomial
 
 open Real
-
+/-- The logarithmic Mahler measure of a polynomial `p` defined as
+`(2 * π)⁻¹ * ∫ x ∈ (0, 2 * π), log ‖p (e ^ (i * x))‖` -/
 noncomputable def logMahlerMeasure (p : ℂ[X]) :=
     (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖
 
@@ -43,18 +51,18 @@ theorem logMahlerMeasure_X : (X : ℂ[X]).logMahlerMeasure = 0 := by simp [logMa
 theorem logMahlerMeasure_monomial (n : ℕ) (z : ℂ) : (monomial n z).logMahlerMeasure = log ‖z‖ := by
   field_simp [logMahlerMeasure]
 
+/-- The Mahler measure of a polynomial `p` defined as `e ^ (logMahlerMeasure p)` if `p` is nonzero
+and `0` otherwise -/
 noncomputable def MahlerMeasure (p : ℂ[X]) := if p ≠ 0 then exp (p.logMahlerMeasure) else 0
 
-theorem MahlerMeasure_def {p : ℂ[X]} (hp : p ≠ 0): p.MahlerMeasure =
+theorem MahlerMeasure_def_of_ne_zero {p : ℂ[X]} (hp : p ≠ 0): p.MahlerMeasure =
     exp ((2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖) :=
   by simp [MahlerMeasure, hp, logMahlerMeasure_def]
 
 theorem logMahlerMeasure_eq_log_MahlerMeasure {p : ℂ[X]} :
     p.logMahlerMeasure = log p.MahlerMeasure := by
   rw [MahlerMeasure]
-  split_ifs with h
-  · simp
-  · simp_all [logMahlerMeasure]
+  split_ifs <;> simp_all [logMahlerMeasure]
 
 @[simp]
 theorem MahlerMeasure_zero : (0 : ℂ[X]).MahlerMeasure = 0 := by simp [MahlerMeasure]
@@ -71,21 +79,21 @@ theorem MahlerMeasure_const (z : ℂ) : (C z).MahlerMeasure = ‖z‖ := by
 
 theorem MahlerMeasure_nonneg (p : ℂ[X]) : 0 ≤ p.MahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
-  rw [MahlerMeasure_def hp]
+  rw [MahlerMeasure_def_of_ne_zero hp]
   apply exp_nonneg
 
 @[simp]
 theorem MahlerMeasure_eq_zero_iff (p : ℂ[X]) : p.MahlerMeasure = 0 ↔ p = 0 := by
   refine ⟨?_, by simp_all [MahlerMeasure_zero]⟩
   contrapose
-  exact fun h ↦ by simp [MahlerMeasure_def h]
+  exact fun h ↦ by simp [MahlerMeasure_def_of_ne_zero h]
 
 lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
   -- Kebekus
   sorry
 
 @[simp]
-theorem MahlerMeasure_prod (p q : ℂ[X]) : (p * q).MahlerMeasure =
+theorem MahlerMeasure_mul (p q : ℂ[X]) : (p * q).MahlerMeasure =
     p.MahlerMeasure * q.MahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
   by_cases hq : q = 0; simp [hq]
@@ -154,7 +162,7 @@ theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z�
       <| norm_pos_iff.mpr hz₀)]
 
 @[simp]
-theorem MahlerMeasure_degree_eq_one {p :ℂ[X]} (h : p.degree = 1) : p.MahlerMeasure =
+theorem MahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.MahlerMeasure =
     ‖p.coeff 1‖ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
   rw [eq_X_add_C_of_degree_le_one (show degree p ≤ 1 by rw [h])]
   simp [show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h]
