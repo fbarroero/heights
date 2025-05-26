@@ -13,3 +13,4 @@ import Heights.IntegralMahlerMeasure
 import Heights.Mwe
 import Heights.poly_max_norm
 import Heights.poly_norm
+import Heights.Polynomial.IsPrimitive
