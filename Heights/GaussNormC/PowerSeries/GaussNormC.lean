@@ -77,9 +77,9 @@ end PowerSeries
 
 --#min_imports
 
-#exit
 
 
+/-
 --This is false
 theorem isNonarchimedean_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
     (hna : IsNonarchimedean v)
@@ -105,4 +105,4 @@ theorem isNonarchimedean_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R �
 
 
 
-end PowerSeries
+end PowerSeries -/

@@ -1,4 +1,3 @@
-import Heights.AbsoluteValue.adicAbv
 import Heights.Basic
 import Heights.GaussNorm
 import Heights.GaussNormC.Polynomial.GaussNormC
