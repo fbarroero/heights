@@ -1,5 +1,6 @@
 import Heights.GaussNormC.Polynomial.GaussNormC
 import Heights.Polynomial.IsPrimitive
+import Heights.AbsoluteValue.adicAbv
 import Mathlib
 
 variable {R K F : Type*} [CommRing R] [FunLike F R ℝ] (v : F) {b : ℝ} (hb : 1 < b)
@@ -9,28 +10,30 @@ variable {R K F : Type*} [CommRing R] [FunLike F R ℝ] (v : F) {b : ℝ} (hb : 
 namespace Ideal
 
 theorem ne_top_iff_exists_isMaximal {I : Ideal R} : I ≠ ⊤ ↔ ∃ M : Ideal R, M.IsMaximal ∧ I ≤ M := by
-  sorry
-
+  refine ⟨exists_le_maximal I, ?_⟩
+  contrapose!
+  rintro rfl M hMmax
+  rw [top_le_iff]
+  exact IsMaximal.ne_top hMmax
+ /-
+    rintro ⟨M, hMmax, hIM⟩
+    by_contra h
+    rw [h, top_le_iff] at hIM
+    exact IsMaximal.ne_top hMmax hIM
+ -/
 end Ideal
 
 variable [IsDedekindDomain R]
 
 namespace IsDedekindDomain
 
-theorem Ideal.ne_top_iff_exists [Nontrivial R] (hR : ¬IsField R) {I : Ideal R} : I ≠ ⊤ ↔ ∃ P : HeightOneSpectrum R, P.asIdeal ∣ I := by
+theorem Ideal.ne_top_iff_exists [Nontrivial R] (hR : ¬IsField R) {I : Ideal R} : I ≠ ⊤ ↔ ∃ P : HeightOneSpectrum R, I ≤ P.asIdeal := by
   rw [Ideal.ne_top_iff_exists_isMaximal]
   constructor
   · rintro ⟨M, hMmax, hIM⟩
-    have hMbot := Ring.ne_bot_of_isMaximal_of_not_isField hMmax hR
-    let M' : MaximalSpectrum R := ⟨M, hMmax⟩
-    let P := (HeightOneSpectrum.equivMaximalSpectrum hR).invFun M'
-    use P
-    exact Ideal.dvd_iff_le.mpr hIM
+    exact ⟨(HeightOneSpectrum.equivMaximalSpectrum hR).invFun <| ⟨M, hMmax⟩, hIM⟩
   · rintro ⟨P, hP⟩
-    use ((HeightOneSpectrum.equivMaximalSpectrum hR) P).asIdeal
-    constructor
-    exact ((HeightOneSpectrum.equivMaximalSpectrum hR) P).isMaximal
-    exact Ideal.le_of_dvd hP
+    exact ⟨((HeightOneSpectrum.equivMaximalSpectrum hR) P).asIdeal, ((HeightOneSpectrum.equivMaximalSpectrum hR) P).isMaximal, hP⟩
 
 end IsDedekindDomain
 
@@ -41,16 +44,37 @@ variable (p : R[X])
 open IsDedekindDomain HeightOneSpectrum
 
 theorem gaussNormC_one_eq_one_iff_span (P : HeightOneSpectrum R) {b : NNReal} (hb : 1 < b) :
-    (p.map (algebraMap R K)).gaussNormC (adicAbv P hb) 1 ≠ 1 ↔ (P.asIdeal ∣ Ideal.span p.coeffs.toSet) := by
+    (p.map (algebraMap R K)).gaussNormC (adicAbv P hb) 1 ≠ 1 ↔ (Ideal.span p.coeffs.toSet ≤ P.asIdeal) := by
+  rw [Ideal.span_le, Set.subset_def]
+  by_cases hp0 : p = 0
+  · simp [hp0]
+  · --rw [← ne_eq] at hp0
+    have h_supp : (p.map (algebraMap R K)).support = p.support := support_map_of_injective p <| FaithfulSMul.algebraMap_injective R K
+    have hsupp_nonempty : (p.map (algebraMap R K)).support.Nonempty := by
+      rw [support_nonempty, Polynomial.map_ne_zero_iff <| FaithfulSMul.algebraMap_injective R K]
+      exact hp0
+    simp [hp0, hsupp_nonempty, gaussNormC, ne_eq, coeff_map, one_pow, mul_one, ← adicAbv_coe_lt_one_iff (K := K) P hb]
+    constructor
+    · contrapose!
+      simp only [forall_exists_index, and_imp]
+      intro r hr hP
+      have := adicAbv_coe_le_one (K := K) P hb
+      have hr' : (P.adicAbv hb) ((algebraMap R K) r) = 1 := le_antisymm (adicAbv_coe_le_one (K := K) P hb r) hP
 
-  sorry
+
+      -- adicAbv_coe_le_one (K := K) P hb
+
+
+      sorry
+
+    sorry
 
 theorem span_coeffs_eq_top_iff_forall_gaussNormC_eq_one [Nontrivial R] (hR : ¬IsField R) {b : NNReal} (hb : 1 < b) :
     Ideal.span (p.coeffs.toSet) = ⊤ ↔
     ∀ (P : HeightOneSpectrum R), (p.map (algebraMap R K)).gaussNormC (adicAbv P hb) 1 = 1 := by
   rw [← not_iff_not, ← ne_eq]
-  simp only [not_forall, gaussNormC_one_eq_one_iff_span]
-  exact Ideal.ne_top_iff_exists hR
+  simp [gaussNormC_one_eq_one_iff_span, Ideal.ne_top_iff_exists hR]
+
 
 
 theorem isPrimitive_iff_forall_gaussNormC_eq_one [Nontrivial R] [IsBezout R] (hR : ¬IsField R)  {b : NNReal} (hb : 1 < b) : p.IsPrimitive ↔
