@@ -25,8 +25,18 @@ theorem isPrimitive_of_span_coeffs_eq_top {R : Type*} [CommSemiring R] (p : R[X]
 end Primitive
 section NormalizedGCDMonoid
 
-variable {R : Type*} [CommRing R] [IsBezout R] (p : R[X])
+variable {R : Type*} [CommRing R] [IsDomain R] [IsBezout R] (p : R[X])
 
+theorem span_content_eq_span_coeffs [NormalizedGCDMonoid R] (p : R[X]) :
+    Ideal.span {p.content} = Ideal.span (p.coeffs.toSet) := by
+
+  apply le_antisymm
+  · rw [Ideal.span_singleton_le_iff_mem]
+
+    sorry
+  sorry
+
+--PRd
 theorem isPrimitive_iff_span_coeffs_eq_top : IsPrimitive p ↔ Ideal.span (p.coeffs.toSet) = ⊤ := by
   /- have hset : p.coeffs.toSet = Set.range (fun i : p.support ↦ p.coeff i) := by
     ext a

@@ -75,7 +75,7 @@ theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_den.IsPrimitive := by
   have hlcm (i : ℕ) : (p.coeff i).den ∣ p.lcmDen := by
     by_cases h : i ∈ p.support
     · exact Finset.dvd_lcm h
-    · simp [not_mem_support_iff.mp h]
+    · simp [notMem_support_iff.mp h]
   have hP1 (i : ℕ) : P ∣ (p.erase_den.coeff i).natAbs := by
     specialize hr1 i
     zify
@@ -93,7 +93,7 @@ theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_den.IsPrimitive := by
     simp only [Monic, P] at hp
     simp only [erase_den, lt_add_iff_pos_right, Nat.lt_one_iff, pos_of_gt,
       ofFn_coeff_eq_val_of_lt, coeff_natDegree, hp, Rat.den_ofNat, Nat.cast_one,
-      EuclideanDomain.div_one, Rat.num_ofNat, mul_one, natAbs_ofNat, P] at hP1
+      EuclideanDomain.div_one, Rat.num_ofNat, mul_one, natAbs_natCast, P] at hP1
     exact hP1
   simp only [erase_denom_coeff', natAbs_mul] at hP1
   norm_cast at hP1
@@ -142,6 +142,7 @@ noncomputable def intMinpoly : ℤ[X] := erase_den (minpoly ℚ x)
 
 variable [NumberField K]
 
+--need to prove height is gal invariant
 theorem equal {x : K} (hpol : ((minpoly ℚ x).map (algebraMap ℚ K)).Splits (RingHom.id K)) :
     (intMinpoly x).leadingCoeff =  ∏ᶠ w : FinitePlace K, max 1 (w x) := by
   have h_poleq := eq_prod_roots_of_splits_id hpol

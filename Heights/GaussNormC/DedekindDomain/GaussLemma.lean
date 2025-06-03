@@ -8,25 +8,20 @@ variable {R K F : Type*} [CommRing R] [FunLike F R ℝ] (v : F) {b : ℝ} (hb : 
 
 
 namespace Ideal
-
+--PRd
 theorem ne_top_iff_exists_isMaximal {I : Ideal R} : I ≠ ⊤ ↔ ∃ M : Ideal R, M.IsMaximal ∧ I ≤ M := by
   refine ⟨exists_le_maximal I, ?_⟩
   contrapose!
   rintro rfl M hMmax
   rw [top_le_iff]
   exact IsMaximal.ne_top hMmax
- /-
-    rintro ⟨M, hMmax, hIM⟩
-    by_contra h
-    rw [h, top_le_iff] at hIM
-    exact IsMaximal.ne_top hMmax hIM
- -/
+
 end Ideal
 
 variable [IsDedekindDomain R]
 
 namespace IsDedekindDomain
-
+--PRd
 theorem Ideal.ne_top_iff_exists [Nontrivial R] (hR : ¬IsField R) {I : Ideal R} : I ≠ ⊤ ↔ ∃ P : HeightOneSpectrum R, I ≤ P.asIdeal := by
   rw [Ideal.ne_top_iff_exists_isMaximal]
   constructor
@@ -58,24 +53,26 @@ theorem gaussNormC_one_eq_one_iff_span (P : HeightOneSpectrum R) {b : NNReal} (h
     · contrapose!
       simp only [forall_exists_index, and_imp]
       intro r hr hP
-      have := adicAbv_coe_le_one (K := K) P hb
+      rw [mem_coeffs_iff] at hr
+      obtain ⟨n, hn1, hn2⟩ := hr
+      rw [← h_supp] at hn1
+      have hcoeffle := adicAbv_coe_le_one (K := K) P hb
       have hr' : (P.adicAbv hb) ((algebraMap R K) r) = 1 := le_antisymm (adicAbv_coe_le_one (K := K) P hb r) hP
-
-
-      -- adicAbv_coe_le_one (K := K) P hb
-
-
-      sorry
-
-    sorry
+      apply le_antisymm <| Finset.sup'_le _ _ fun b _ ↦ hcoeffle (p.coeff b)
+      rw [← hr', hn2]
+      apply Finset.le_sup' (f := fun x ↦ (P.adicAbv hb) ((algebraMap R K) (p.coeff x))) hn1
+    · intro h
+      apply ne_of_lt
+      rw [Finset.sup'_lt_iff]
+      intro n hn
+      rw [h_supp, mem_support_iff] at hn
+      exact h _ <| coeff_mem_coeffs p n hn
 
 theorem span_coeffs_eq_top_iff_forall_gaussNormC_eq_one [Nontrivial R] (hR : ¬IsField R) {b : NNReal} (hb : 1 < b) :
     Ideal.span (p.coeffs.toSet) = ⊤ ↔
     ∀ (P : HeightOneSpectrum R), (p.map (algebraMap R K)).gaussNormC (adicAbv P hb) 1 = 1 := by
   rw [← not_iff_not, ← ne_eq]
   simp [gaussNormC_one_eq_one_iff_span, Ideal.ne_top_iff_exists hR]
-
-
 
 theorem isPrimitive_iff_forall_gaussNormC_eq_one [Nontrivial R] [IsBezout R] (hR : ¬IsField R)  {b : NNReal} (hb : 1 < b) : p.IsPrimitive ↔
     ∀ (P : HeightOneSpectrum R), (p.map (algebraMap R K)).gaussNormC (adicAbv P hb) 1 = 1 := by
