@@ -3,8 +3,7 @@ Copyright (c) 2025 Fabrizio Barroero. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fabrizio Barroero
 -/
---import Mathlib
-import Heights.GaussNormC.PowerSeries.GaussNormC
+import Mathlib
 /-!
 # Gauss norm for polynomials
 This file defines the Gauss norm for polynomials. Given a polynomial `p` in `R[X]`, a function
@@ -29,7 +28,7 @@ namespace Polynomial
 
 variable (p : R[X])
 
-/-- -/
+/--
 def gaussNormC : ℝ := if h : p.support.Nonempty then p.support.sup' h fun i ↦
     (v (p.coeff i) * c ^ i) else 0
 
@@ -121,13 +120,15 @@ lemma le_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] (p : R[X]) {
   apply PowerSeries.le_gaussNormC
   simpa using aux_bdd v c p
 
-theorem isNonarchimedean_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
-    (hna : IsNonarchimedean v) {c : ℝ} (hc : 0 ≤ c) : IsNonarchimedean (gaussNormC v c) := by
+ -/
+
+theorem isNonarchimedean_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
+    (hna : IsNonarchimedean v) {c : ℝ} (hc : 0 ≤ c) : IsNonarchimedean (gaussNorm v c) := by
   intro p q
   by_cases hp : p = 0; simp [hp]
   by_cases hq : q = 0; simp [hq]
-  by_cases hpq : p + q = 0; simp [hpq, hc, gaussNormC_nonneg]
-  rw [gaussNormC]
+  by_cases hpq : p + q = 0; simp [hpq, hc, gaussNorm_nonneg]
+  rw [gaussNorm]
   simp only [support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, coeff_add,
     hp, hq, Finset.sup'_le_iff, mem_support_iff]
   intro i hi
@@ -137,16 +138,16 @@ theorem isNonarchimedean_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R �
     exact hna (p.coeff i) (q.coeff i)
   _ = max (v (p.coeff i) * c ^ i) (v (q.coeff i) * c ^ i) := by
     rw [max_mul_of_nonneg _ _ (pow_nonneg hc _)]
-  _ ≤ max (gaussNormC v c p) (gaussNormC v c q) := by
+  _ ≤ max (gaussNorm v c p) (gaussNorm v c q) := by
     apply max_le_max <;>
-    exact le_gaussNormC v _ hc i
+    exact le_gaussNorm v _ hc i
 
-theorem gaussNormC_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) /- {c : ℝ} (hc : 0 ≤ c) -/ :
-    (p * q).gaussNormC v c = p.gaussNormC v c * q.gaussNormC v c := by
+theorem gaussNorm_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) /- {c : ℝ} (hc : 0 ≤ c) -/ :
+    (p * q).gaussNorm v c = p.gaussNorm v c * q.gaussNorm v c := by
   by_cases hpq : ¬ p * q = 0
   · have h_supp_p : p.support.Nonempty := support_nonempty.mpr <| left_ne_zero_of_mul hpq
     have h_supp_q : q.support.Nonempty := support_nonempty.mpr <| right_ne_zero_of_mul hpq
-    simp only [gaussNormC, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, h_supp_p,
+    simp only [gaussNorm, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, h_supp_p,
       h_supp_q]
     apply le_antisymm
     · simp only [Finset.sup'_le_iff, mem_support_iff, ne_eq]
@@ -163,21 +164,21 @@ theorem gaussNormC_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) /- {
     | inr h => simp [h]
 
 end Polynomial
-
+/-
 namespace PowerSeries
 
 @[simp]
 theorem gaussNormC_C [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] {c : ℝ} (hc : 0 ≤ c) (r : R) :
-    (C R r).gaussNormC v c = v r := by
+    (C R r).gaussNorm v c = v r := by
   simp [← @Polynomial.coe_C, hc]
 
 @[simp]
 theorem gaussNormC_monomial [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] {c : ℝ} (hc : 0 ≤ c)
-    (n : ℕ) (r : R) : (monomial R n r).gaussNormC v c = v r * c ^ n := by
+    (n : ℕ) (r : R) : (monomial R n r).gaussNorm v c = v r * c ^ n := by
   simp [← @Polynomial.coe_monomial, hc]
 
 end PowerSeries
-
+ -/
 --#min_imports
 
 namespace Polynomial

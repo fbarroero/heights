@@ -1,6 +1,6 @@
 import Heights.Basic
 import Heights.GaussNorm
-import Heights.GaussNormC.Polynomial.GaussNormC
+import Heights.GaussNormC.Polynomial.GaussNorm
 import Heights.GaussNormC.PowerSeries.GaussNormC
 import Heights.GaussNormSeries
 import Heights.Heights
