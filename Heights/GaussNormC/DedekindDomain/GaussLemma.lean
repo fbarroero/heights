@@ -1,12 +1,12 @@
 --import Heights.GaussNormC.Polynomial.GaussNormC
-import Heights.Polynomial.IsPrimitive
+--import Heights.Polynomial.IsPrimitive
 --import Heights.AbsoluteValue.adicAbv
 import Mathlib
 
 variable {R K F : Type*} [CommRing R] [FunLike F R ℝ] (v : F) {b : ℝ} (hb : 1 < b)
 [Field K] [Algebra R K] [IsFractionRing R K]
 
-
+/-
 namespace Ideal
 --PRd
 theorem ne_top_iff_exists_isMaximal {I : Ideal R} : I ≠ ⊤ ↔ ∃ M : Ideal R, M.IsMaximal ∧ I ≤ M := by
@@ -31,16 +31,17 @@ theorem Ideal.ne_top_iff_exists [Nontrivial R] (hR : ¬IsField R) {I : Ideal R} 
     exact ⟨((HeightOneSpectrum.equivMaximalSpectrum hR) P).asIdeal, ((HeightOneSpectrum.equivMaximalSpectrum hR) P).isMaximal, hP⟩
 
 end IsDedekindDomain
-
+ -/
 namespace Polynomial
-
+variable [IsDedekindDomain R]
 variable (p : R[X])
 
 open IsDedekindDomain HeightOneSpectrum
 
-theorem gaussNormC_one_eq_one_iff_span (P : HeightOneSpectrum R) {b : NNReal} (hb : 1 < b) :
-    (p.map (algebraMap R K)).gaussNorm (adicAbv P hb) 1 ≠ 1 ↔ (Ideal.span p.coeffs.toSet ≤ P.asIdeal) := by
-  rw [Ideal.span_le, Set.subset_def]
+theorem gaussNorm_one_eq_one_iff_contentIdeal_le (P : HeightOneSpectrum R) {b : NNReal}
+    (hb : 1 < b) : (p.map (algebraMap R K)).gaussNorm (adicAbv P hb) 1 ≠ 1 ↔
+    (p.contentIdeal ≤ P.asIdeal) := by
+  rw [contentIdeal, Ideal.span_le, Set.subset_def]
   by_cases hp0 : p = 0
   · simp [hp0]
   · --rw [← ne_eq] at hp0
@@ -68,15 +69,17 @@ theorem gaussNormC_one_eq_one_iff_span (P : HeightOneSpectrum R) {b : NNReal} (h
       rw [h_supp, mem_support_iff] at hn
       exact h _ <| coeff_mem_coeffs p n hn
 
-theorem span_coeffs_eq_top_iff_forall_gaussNormC_eq_one [Nontrivial R] (hR : ¬IsField R) {b : NNReal} (hb : 1 < b) :
-    Ideal.span (p.coeffs.toSet) = ⊤ ↔
+theorem contentIdeal_eq_top_iff_forall_gaussNorm_eq_one [Nontrivial R] (hR : ¬IsField R)
+    {b : NNReal} (hb : 1 < b) : p.contentIdeal = ⊤ ↔
     ∀ (P : HeightOneSpectrum R), (p.map (algebraMap R K)).gaussNorm (adicAbv P hb) 1 = 1 := by
   rw [← not_iff_not, ← ne_eq]
-  simp [gaussNormC_one_eq_one_iff_span, Ideal.ne_top_iff_exists hR]
+  simp [gaussNorm_one_eq_one_iff_contentIdeal_le, ideal_ne_top_iff_exists hR]
 
-theorem isPrimitive_iff_forall_gaussNormC_eq_one [Nontrivial R] [IsBezout R] (hR : ¬IsField R)  {b : NNReal} (hb : 1 < b) : p.IsPrimitive ↔
-    ∀ (P : HeightOneSpectrum R), (p.map (algebraMap R K)).gaussNorm (adicAbv P hb) 1 = 1 := by
-  rw [isPrimitive_iff_span_coeffs_eq_top, span_coeffs_eq_top_iff_forall_gaussNormC_eq_one (K := K) p hR hb]
+theorem isPrimitive_iff_forall_gaussNormC_eq_one [Nontrivial R] [IsBezout R] (hR : ¬IsField R)
+    {b : NNReal} (hb : 1 < b) : p.IsPrimitive ↔ ∀ (P : HeightOneSpectrum R),
+    (p.map (algebraMap R K)).gaussNorm (adicAbv P hb) 1 = 1 := by
+  rw [isPrimitive_iff_contentIdeal_eq_top,
+    contentIdeal_eq_top_iff_forall_gaussNorm_eq_one (K := K) p hR hb]
 /-
   by_cases hp0 : p = 0 --add hypothesis p ≠ 0??
   · --rw [← not_iff_not]
