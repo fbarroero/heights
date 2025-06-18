@@ -88,11 +88,21 @@ theorem MahlerMeasure_eq_zero_iff (p : ℂ[X]) : p.MahlerMeasure = 0 ↔ p = 0 :
   contrapose
   exact fun h ↦ by simp [MahlerMeasure_def_of_ne_zero h]
 
-lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
-  -- Kebekus
-  sorry
+lemma meromorphicAt_aeval (x : ℂ) (p : ℂ[X]) : MeromorphicAt (fun z ↦ aeval z p) x := by --add this somewhere
+  use 0
+  simp [-coe_aeval_eq_eval, AnalyticAt.aeval_polynomial, Differentiable.analyticAt]
 
-@[simp]
+--theorem CircleIntegrable_def (f : ℂ → E) (c : ℂ) (R : ℝ)
+
+lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
+  suffices CircleIntegrable (fun z ↦ log ‖eval z p‖) 0 1 by assumption -- add CircleIntegrable_def and use rw
+  apply circleIntegrable_log_norm_meromorphicOn
+  simp only [MeromorphicOn, abs_one, mem_sphere_iff_norm, sub_zero]
+  exact fun x _ ↦ meromorphicAt_aeval x p
+
+  /- apply intervalIntegrable_circleIntegrable_of_circleIntegrable_aux this
+  exact aux p -/
+
 theorem MahlerMeasure_mul (p q : ℂ[X]) : (p * q).MahlerMeasure =
     p.MahlerMeasure * q.MahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
@@ -341,3 +351,4 @@ theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) : ‖p.coeff n�
     exact splits_iff_card_roots.mp (IsAlgClosed.splits p)
 
 end Polynomial
+#min_imports
