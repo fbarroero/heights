@@ -143,16 +143,13 @@ noncomputable def intMinpoly : ℤ[X] := erase_den (minpoly ℚ x)
 variable [NumberField K]
 
 --need to prove height is gal invariant
-theorem equal {x : K} (hpol : ((minpoly ℚ x).map (algebraMap ℚ K)).Splits (RingHom.id K)) :
+theorem equal {x : K} (hpol : ((intMinpoly x).map (algebraMap ℤ K)).Splits (RingHom.id K)) :
     (intMinpoly x).leadingCoeff =  ∏ᶠ w : FinitePlace K, max 1 (w x) := by
   have h_poleq := eq_prod_roots_of_splits_id hpol
-  simp at h_poleq
-  have h (w : FinitePlace K) : w ((intMinpoly x).leadingCoeff) *
-    (Multiset.map (fun a ↦ max 1 (w a) ) (map (algebraMap ℚ K) (minpoly ℚ x)).roots).prod = 1 := by
-
+  simp only [algebraMap_int_eq] at h_poleq
+  have h (w : FinitePlace K) : w (intMinpoly x).leadingCoeff *
+    (((intMinpoly x).map (algebraMap ℤ K)).roots.map (fun a ↦ max 1 (w a))).prod = 1 := by
     sorry
-
   sorry
-
 
 end NumberField

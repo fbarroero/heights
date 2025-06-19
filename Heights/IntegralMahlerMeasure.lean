@@ -35,21 +35,21 @@ theorem logMahlerMeasure_def (p : ℂ[X]) : p.logMahlerMeasure =
     (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖ := rfl
 
 @[simp]
-theorem logMahlerMeasure_zero : (0 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure]
+theorem logMahlerMeasure_zero : (0 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure_def]
 
 @[simp]
-theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure]
+theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure_def]
 
 @[simp]
 theorem logMahlerMeasure_const (z : ℂ) : (C z).logMahlerMeasure = log ‖z‖ := by
-  field_simp [logMahlerMeasure]
+  field_simp [logMahlerMeasure_def]
 
 @[simp]
-theorem logMahlerMeasure_X : (X : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure]
+theorem logMahlerMeasure_X : (X : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure_def]
 
 @[simp]
 theorem logMahlerMeasure_monomial (n : ℕ) (z : ℂ) : (monomial n z).logMahlerMeasure = log ‖z‖ := by
-  field_simp [logMahlerMeasure]
+  field_simp [logMahlerMeasure_def]
 
 /-- The Mahler measure of a polynomial `p` defined as `e ^ (logMahlerMeasure p)` if `p` is nonzero
 and `0` otherwise -/
@@ -62,7 +62,7 @@ theorem MahlerMeasure_def_of_ne_zero {p : ℂ[X]} (hp : p ≠ 0): p.MahlerMeasur
 theorem logMahlerMeasure_eq_log_MahlerMeasure {p : ℂ[X]} :
     p.logMahlerMeasure = log p.MahlerMeasure := by
   rw [MahlerMeasure]
-  split_ifs <;> simp_all [logMahlerMeasure]
+  split_ifs <;> simp_all [logMahlerMeasure_def]
 
 @[simp]
 theorem MahlerMeasure_zero : (0 : ℂ[X]).MahlerMeasure = 0 := by simp [MahlerMeasure]
@@ -87,6 +87,8 @@ theorem MahlerMeasure_eq_zero_iff (p : ℂ[X]) : p.MahlerMeasure = 0 ↔ p = 0 :
   refine ⟨?_, by simp_all [MahlerMeasure_zero]⟩
   contrapose
   exact fun h ↦ by simp [MahlerMeasure_def_of_ne_zero h]
+
+#min_imports
 
 lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
   -- Kebekus
