@@ -8,7 +8,7 @@ def lcmDen (p : ℚ[X]) : ℕ := p.support.lcm fun i ↦ (p.coeff i).den
 
 --Useless?
 theorem lcmDen_poly_int (p : ℤ[X]) : lcmDen (p.map (castRingHom ℚ)) = 1 := by
-  simp [lcmDen, coeff_map, eq_intCast, Rat.intCast_den, Nat.cast_one]
+  simp [lcmDen, coeff_map, eq_intCast, Rat.intCast_den]
   apply dvd_antisymm_of_normalize_eq Finset.normalize_lcm rfl _
     <| one_dvd ((map (castRingHom ℚ) p).support.lcm fun i ↦ 1)
   apply Finset.lcm_dvd
@@ -83,7 +83,7 @@ theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_den.IsPrimitive := by
     rwa [ne_eq, ← isUnit_iff_natAbs_eq]
   have hPdvd1 (i : ℕ) : P ∣ (p.erase_den.coeff i).natAbs := by
     zify
-    simp only [dvd_abs, hr1]
+    simp only [dvd_abs]
     apply dvd_trans _ <| natAbs_dvd.mpr <| hr1 i
     simpa [natCast_dvd, P] using r.natAbs.minFac_dvd
   have hPdvd2 : P ∣ p.lcmDen := by
