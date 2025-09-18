@@ -14,105 +14,103 @@ properties.
 
 - `Polynomial.logMahlerMeasure p`: the logarithmic Mahler measure of a polynomial `p` defined as
 `(2 * π)⁻¹ * ∫ x ∈ (0, 2 * π), log ‖p (e ^ (i * x))‖`.
-- `Polynomial.MahlerMeasure p`: the (exponential) Mahler measure of a polynomial `p`, which is equal
+- `Polynomial.mahlerMeasure p`: the (exponential) Mahler measure of a polynomial `p`, which is equal
 to `e ^ (logMahlerMeasure p)` if `p` is nonzero, and `0` otherwise.
 
 ## Main results
 
-- `Polynomial.MahlerMeasure_mul`: the Mahler measure of the product of two polynomials is the
+- `Polynomial.mahlerMeasure_mul`: the Mahler measure of the product of two polynomials is the
 product of their Mahler measures.
 -/
 
 namespace Polynomial
 
 open Real
+
 /-- The logarithmic Mahler measure of a polynomial `p` defined as
 `(2 * π)⁻¹ * ∫ x ∈ (0, 2 * π), log ‖p (e ^ (i * x))‖` -/
-noncomputable def logMahlerMeasure (p : ℂ[X]) :=
-    (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖
+noncomputable def logMahlerMeasure (p : ℂ[X]) := circleAverage (fun x ↦ log ‖eval x p‖) 0 1
 
-theorem logMahlerMeasure_def (p : ℂ[X]) : p.logMahlerMeasure =
-    (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖ := rfl
-
-@[simp]
-theorem logMahlerMeasure_zero : (0 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure_def]
+theorem logMahlerMeasure_def (p : ℂ[X]) : p.logMahlerMeasure = circleAverage (fun x ↦ log ‖eval x p‖) 0 1 := rfl
+   -- (2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖ := rfl
 
 @[simp]
-theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure_def]
+theorem logMahlerMeasure_zero : (0 : ℂ[X]).logMahlerMeasure = 0 := by
+  simp [logMahlerMeasure_def, circleAverage_def]
+
+@[simp]
+theorem logMahlerMeasure_one : (1 : ℂ[X]).logMahlerMeasure = 0 := by
+  simp [logMahlerMeasure_def, circleAverage_def]
 
 @[simp]
 theorem logMahlerMeasure_const (z : ℂ) : (C z).logMahlerMeasure = log ‖z‖ := by
-  field_simp [logMahlerMeasure_def]
+  simp [logMahlerMeasure_def, circleAverage_def, mul_assoc]
 
 @[simp]
-theorem logMahlerMeasure_X : (X : ℂ[X]).logMahlerMeasure = 0 := by simp [logMahlerMeasure_def]
+theorem logMahlerMeasure_X : (X : ℂ[X]).logMahlerMeasure = 0 := by
+  simp [logMahlerMeasure_def, circleAverage_def]
 
 @[simp]
 theorem logMahlerMeasure_monomial (n : ℕ) (z : ℂ) : (monomial n z).logMahlerMeasure = log ‖z‖ := by
-  field_simp [logMahlerMeasure_def]
+  simp [logMahlerMeasure_def, circleAverage_def, mul_assoc]
 
 /-- The Mahler measure of a polynomial `p` defined as `e ^ (logMahlerMeasure p)` if `p` is nonzero
 and `0` otherwise -/
-noncomputable def MahlerMeasure (p : ℂ[X]) := if p ≠ 0 then exp (p.logMahlerMeasure) else 0
+noncomputable def mahlerMeasure (p : ℂ[X]) := if p ≠ 0 then exp (p.logMahlerMeasure) else 0
 
-theorem MahlerMeasure_def_of_ne_zero {p : ℂ[X]} (hp : p ≠ 0): p.MahlerMeasure =
+theorem mahlerMeasure_def_of_ne_zero {p : ℂ[X]} (hp : p ≠ 0): p.mahlerMeasure =
     exp ((2 * π)⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖) :=
-  by simp [MahlerMeasure, hp, logMahlerMeasure_def]
+  by simp [mahlerMeasure, hp, logMahlerMeasure_def, circleAverage_def]
 
 theorem logMahlerMeasure_eq_log_MahlerMeasure {p : ℂ[X]} :
-    p.logMahlerMeasure = log p.MahlerMeasure := by
-  rw [MahlerMeasure]
-  split_ifs <;> simp_all [logMahlerMeasure_def]
+    p.logMahlerMeasure = log p.mahlerMeasure := by
+  rw [mahlerMeasure]
+  split_ifs <;> simp_all [logMahlerMeasure_def, circleAverage_def]
 
 @[simp]
-theorem MahlerMeasure_zero : (0 : ℂ[X]).MahlerMeasure = 0 := by simp [MahlerMeasure]
+theorem mahlerMeasure_zero : (0 : ℂ[X]).mahlerMeasure = 0 := by simp [mahlerMeasure]
 
 @[simp]
-theorem MahlerMeasure_one : (1 : ℂ[X]).MahlerMeasure = 1 := by simp [MahlerMeasure]
+theorem mahlerMeasure_one : (1 : ℂ[X]).mahlerMeasure = 1 := by simp [mahlerMeasure]
 
 @[simp]
-theorem MahlerMeasure_const (z : ℂ) : (C z).MahlerMeasure = ‖z‖ := by
-  simp only [MahlerMeasure, ne_eq, map_eq_zero, logMahlerMeasure_const, ite_not]
+theorem mahlerMeasure_const (z : ℂ) : (C z).mahlerMeasure = ‖z‖ := by
+  simp only [mahlerMeasure, ne_eq, map_eq_zero, logMahlerMeasure_const, ite_not]
   split_ifs with h
   · simp [h]
   · simp [h, exp_log]
 
-theorem MahlerMeasure_nonneg (p : ℂ[X]) : 0 ≤ p.MahlerMeasure := by
+theorem mahlerMeasure_nonneg (p : ℂ[X]) : 0 ≤ p.mahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
-  rw [MahlerMeasure_def_of_ne_zero hp]
+  rw [mahlerMeasure_def_of_ne_zero hp]
   apply exp_nonneg
 
 @[simp]
-theorem MahlerMeasure_eq_zero_iff (p : ℂ[X]) : p.MahlerMeasure = 0 ↔ p = 0 := by
-  refine ⟨?_, by simp_all [MahlerMeasure_zero]⟩
+theorem mahlerMeasure_eq_zero_iff (p : ℂ[X]) : p.mahlerMeasure = 0 ↔ p = 0 := by
+  refine ⟨?_, by simp_all [mahlerMeasure_zero]⟩
   contrapose
-  exact fun h ↦ by simp [MahlerMeasure_def_of_ne_zero h]
+  exact fun h ↦ by simp [mahlerMeasure_def_of_ne_zero h]
 
 lemma meromorphicAt_aeval (x : ℂ) (p : ℂ[X]) : MeromorphicAt (fun z ↦ aeval z p) x := by --add this somewhere
   use 0
   simp [-coe_aeval_eq_eval, AnalyticAt.aeval_polynomial, Differentiable.analyticAt]
 
---theorem CircleIntegrable_def (f : ℂ → E) (c : ℂ) (R : ℝ)
 
-lemma MahlerMeasure_integrable (p : ℂ[X]) : IntervalIntegrable (fun x ↦ log ‖eval (circleMap 0 1 x) p‖) MeasureTheory.volume 0 (2 * π) := by
-  suffices CircleIntegrable (fun z ↦ log ‖eval z p‖) 0 1 by assumption -- add CircleIntegrable_def and use rw
-  apply circleIntegrable_log_norm_meromorphicOn
-  simp only [MeromorphicOn, abs_one, mem_sphere_iff_norm, sub_zero]
-  exact fun x _ ↦ meromorphicAt_aeval x p
+private lemma mahlerMeasure_integrable (p : ℂ[X]) :
+    IntervalIntegrable (fun x ↦ log ‖p.eval (circleMap 0 1 x)‖) MeasureTheory.volume 0 (2 * π) := by
+  --lasciare come sopra
+  sorry
 
-  /- apply intervalIntegrable_circleIntegrable_of_circleIntegrable_aux this
-  exact aux p -/
-
-theorem MahlerMeasure_mul (p q : ℂ[X]) : (p * q).MahlerMeasure =
-    p.MahlerMeasure * q.MahlerMeasure := by
+theorem mahlerMeasure_mul (p q : ℂ[X]) : (p * q).mahlerMeasure =
+    p.mahlerMeasure * q.mahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
   by_cases hq : q = 0; simp [hq]
   rw [← ne_eq] at hp hq
-  simp only [MahlerMeasure, ne_eq, mul_eq_zero, hp, hq, or_self, not_false_eq_true, ↓reduceIte,
-    logMahlerMeasure, mul_inv_rev, eval_mul, Complex.norm_mul]
+  simp only [mahlerMeasure, ne_eq, mul_eq_zero, hp, hq, or_self, not_false_eq_true, ↓reduceIte,
+    logMahlerMeasure, eval_mul, norm_mul, circleAverage_def, mul_inv_rev, smul_eq_mul]
   rw [← exp_add, ← left_distrib]
   congr
-  rw [← intervalIntegral.integral_add (MahlerMeasure_integrable p) (MahlerMeasure_integrable q)]
+  rw [← intervalIntegral.integral_add (mahlerMeasure_integrable p) (mahlerMeasure_integrable q)]
   apply intervalIntegral.integral_congr_ae
   rw [MeasureTheory.ae_iff]
   apply Set.Finite.measure_zero _ MeasureTheory.volume
@@ -136,10 +134,10 @@ theorem logMahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖₊ + ((p.roots).map (fun a ↦ max 0 log ‖a‖₊)).sum := by
   simp [logMahlerMeasure_eq]
 
-theorem MahlerMeasure_eq (p : ℂ[X]) : p.MahlerMeasure =
+theorem mahlerMeasure_eq (p : ℂ[X]) : p.mahlerMeasure =
     ‖p.leadingCoeff‖ * ((p.roots).map (fun a ↦ max 1 ‖a‖)).prod := by
   by_cases hp : p = 0; simp [hp]
-  simp only [MahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
+  simp only [mahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
     Pi.sup_apply, Pi.zero_apply]
   rw [exp_add, exp_log (norm_pos_iff.mpr <| leadingCoeff_ne_zero.mpr hp)]
   simp only [exp_multiset_sum, Multiset.map_map, Function.comp_apply, mul_eq_mul_left_iff,
@@ -150,17 +148,17 @@ theorem MahlerMeasure_eq (p : ℂ[X]) : p.MahlerMeasure =
   by_cases h : x = 0; simp [h]
   simp [exp_log <| norm_pos_iff.mpr h]
 
-theorem MahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.MahlerMeasure =
+theorem MahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.mahlerMeasure =
     ‖p.leadingCoeff‖₊ * ((p.roots).map (fun a ↦ max 1 ‖a‖₊)).prod := by
   by_cases hp : p = 0; simp [hp]
   push_cast
-  simp [MahlerMeasure_eq, hp]
+  simp [mahlerMeasure_eq]
 
 @[simp]
-theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).MahlerMeasure =
+theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).mahlerMeasure =
     ‖z₁‖ * max 1 ‖z₁⁻¹ * z₀‖ := by
   have hpol : C z₁ * X + C z₀ ≠ 0 := by simp [← degree_ne_bot, h1]
-  simp only [MahlerMeasure, ne_eq, hpol, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
+  simp only [mahlerMeasure, ne_eq, hpol, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
     roots_C_mul_X_add_C z₀ h1, Pi.sup_apply, Pi.zero_apply, Multiset.map_singleton, norm_neg,
     Complex.norm_mul, norm_inv, Multiset.sum_singleton]
   rw [exp_add, exp_log (norm_pos_iff.mpr <| leadingCoeff_ne_zero.mpr hpol)]
@@ -172,7 +170,7 @@ theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z�
       <| norm_pos_iff.mpr hz₀)]
 
 @[simp]
-theorem MahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.MahlerMeasure =
+theorem MahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.mahlerMeasure =
     ‖p.coeff 1‖ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
   rw [eq_X_add_C_of_degree_le_one (show degree p ≤ 1 by rw [h])]
   simp [show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h]
@@ -190,24 +188,24 @@ lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) :
   rintro _ ⟨a, _, rfl⟩
   exact le_max_left 1 ‖a‖
 
-lemma leading_coeff_le_mahlerMeasure (p : ℂ[X]) : ‖p.leadingCoeff‖ ≤ p.MahlerMeasure := by
-  rw [MahlerMeasure_eq]
+lemma leading_coeff_le_mahlerMeasure (p : ℂ[X]) : ‖p.leadingCoeff‖ ≤ p.mahlerMeasure := by
+  rw [mahlerMeasure_eq]
   exact le_mul_of_one_le_right (norm_nonneg p.leadingCoeff) (one_le_prod_max_one_norm_roots p)
 
 lemma prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]}
-    (hlc : 1 ≤ ‖p.leadingCoeff‖) : (p.roots.map (fun a ↦ max 1 ‖a‖)).prod ≤ p.MahlerMeasure := by
-  rw [MahlerMeasure_eq]
+    (hlc : 1 ≤ ‖p.leadingCoeff‖) : (p.roots.map (fun a ↦ max 1 ‖a‖)).prod ≤ p.mahlerMeasure := by
+  rw [mahlerMeasure_eq]
   exact le_mul_of_one_le_left (le_trans zero_le_one (one_le_prod_max_one_norm_roots p)) hlc
 
 -- not sure this is useful
 theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤ ‖p.leadingCoeff‖) :
-    (p.roots.map (fun x ↦ ‖x‖₊)).sup ≤ p.MahlerMeasure := by
+    (p.roots.map (fun x ↦ ‖x‖₊)).sup ≤ p.mahlerMeasure := by
   apply le_trans _ <| prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff hlc
   have : (Multiset.map (fun a ↦ 1 ⊔ ‖a‖) p.roots).prod = (Multiset.map (fun a ↦ 1 ⊔ ‖a‖₊) p.roots).prod := by
     norm_cast
     simp
   rw [this]
-  simp only [NNReal.coe_le_coe, Multiset.sup_le, Multiset.mem_map, ne_eq, IsRoot.def,
+  simp only [NNReal.coe_le_coe, Multiset.sup_le, Multiset.mem_map,
     forall_exists_index, and_imp]
   intro b x hx hxb
   rw [← hxb]
@@ -226,14 +224,14 @@ private lemma bar (p q : Prop) : (p → q) ∧ p ↔ (p ∧ q) := by
 
 --TODO: golf
 open Set in
-lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖ := by
+lemma l1 (p : ℂ[X]) : p.mahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖ := by
   by_cases hp : p = 0; simp [hp]
-  simp only [MahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure, mul_inv_rev]
+  simp only [mahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure, mul_inv_rev, circleAverage_def, smul_eq_mul]
   calc
   rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖) ≤
       rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
     gcongr
-    apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos) (MahlerMeasure_integrable p) (by simp)
+    apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos) (mahlerMeasure_integrable p) (by simp)
     simp only [Filter.EventuallyLE, Filter.eventually_iff_exists_mem]
     let v := {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
     use v
@@ -307,9 +305,9 @@ lemma l1 (p : ℂ[X]) : p.MahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖t
     simp_all [toFn]
 
 open Multiset in
-theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) : ‖p.coeff n‖₊ ≤ (p.natDegree).choose (p.natDegree - n) * p.MahlerMeasure := by
+theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) : ‖p.coeff n‖₊ ≤ (p.natDegree).choose (p.natDegree - n) * p.mahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
-  by_cases hn: p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt hn, le_of_lt hn, MahlerMeasure_nonneg]
+  by_cases hn: p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt hn, le_of_lt hn, mahlerMeasure_nonneg]
   rw [not_lt] at hn
   rw [MahlerMeasure_eq_nnnorm, coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits p)) hn]
   norm_cast

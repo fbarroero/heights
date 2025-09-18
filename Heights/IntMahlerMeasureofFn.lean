@@ -117,7 +117,7 @@ theorem card1 {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
 
 open Int in
 def funct (n : ℕ) (B : NNReal) :
-    {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).MahlerMeasure ≤ B} →
+    {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).mahlerMeasure ≤ B} →
     {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} := by
   apply Subtype.map id
   intro p hp
@@ -139,13 +139,13 @@ def funct (n : ℕ) (B : NNReal) :
     rw [h_norm]
     apply le_trans (norm_coeff_le_binom_mahlerMeasure i (map (castRingHom ℂ) p))
     gcongr
-    · exact MahlerMeasure_nonneg (map (castRingHom ℂ) p)
+    · exact mahlerMeasure_nonneg (map (castRingHom ℂ) p)
     · rw [h_deg_eq]
       simp only [h_i, Nat.choose_symm]
       apply Nat.choose_le_choose i <| le_of_lt h_deg
 
 theorem Northcott {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
-    Nat.card {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).MahlerMeasure ≤ B} ≤
+    Nat.card {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).mahlerMeasure ≤ B} ≤
     ∏ i : Fin n, (2 * Nat.floor (Nat.choose n i * B) + 1) := by
   have h1 := card1 hn B
   have h2 : ∏ i : Fin n, (2 * ⌊n.choose i * B⌋₊ + 1) ≠ 0 := by
