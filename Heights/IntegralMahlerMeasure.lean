@@ -26,7 +26,7 @@ product of their Mahler measures.
 namespace Polynomial
 
 open Real
-
+/-
 /-- The logarithmic Mahler measure of a polynomial `p` defined as
 `(2 * π)⁻¹ * ∫ x ∈ (0, 2 * π), log ‖p (e ^ (i * x))‖` -/
 noncomputable def logMahlerMeasure (p : ℂ[X]) := circleAverage (fun x ↦ log ‖eval x p‖) 0 1
@@ -125,10 +125,66 @@ theorem mahlerMeasure_mul (p q : ℂ[X]) : (p * q).mahlerMeasure =
     rw [log_mul]<;>
     simp_all
   · exact Set.InjOn.mono (fun _ hx ↦ hx.1) (injOn_circleMap_of_abs_sub_le (zero_ne_one' ℝ).symm (by simp [le_of_eq, pi_nonneg]))
+ -/
+
+lemma aaa (x : ℝ) (h : 0 < x) : x ≠ 0 := by
+  exact Ne.symm (ne_of_lt h)
+
+open MeromorphicOn in
+theorem logMahlerMeasure_X_add_C (z : ℂ) : (X + C z).logMahlerMeasure = log (max 1 ‖z‖) := by
+  by_cases hz : z = 0; simp [hz, logMahlerMeasure_X]
+  rw [logMahlerMeasure_def, MeromorphicOn.circleAverage_log_norm zero_ne_one.symm  (by exact (analyticOnNhd_id.aeval_polynomial (X + C z)).meromorphicOn)]
+  have : meromorphicTrailingCoeffAt (fun x ↦ eval x (X + C z)) 0 = z := by
+    rw [AnalyticAt.meromorphicTrailingCoeffAt_of_ne_zero]
+    simp
+    refine AnalyticAt.aeval_polynomial ?_ (X + C z)
+    --have : (fun x : ℂ ↦ x) = (id : ℂ → ℂ) := rfl
+    --rw [this]
+    exact analyticAt_id
+    simp [hz]
+  rw [this]
+  have : log (max 1 ‖z‖) = log ‖z‖ + log (min 1 ‖z‖⁻¹) := by
+    rw [← log_mul (by simp [hz])]
+    congr
+    by_cases h1 : ‖z‖ ≤ 1;
+    · simp [h1]
+
+      sorry
+    · sorry
+    apply ne_of_gt
+    simp [hz]
+
+  have : MeromorphicOn (fun x ↦ x + z) (Metric.closedBall 0 |1|) := by
+    apply MeromorphicOn.add
+    exact MeromorphicOn.id
+    exact MeromorphicOn.const z
+
+  simp [divisor_def]
+
+
+    --refine (ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE p.continuousAt  ?_).mpr ?_
+
+  sorry
 
 
 theorem logMahlerMeasure_eq (p : ℂ[X]) : p.logMahlerMeasure =
-    log ‖p.leadingCoeff‖ + ((p.roots).map (fun a ↦ max 0 log ‖a‖)).sum := by sorry --use jensen kebekus
+    log ‖p.leadingCoeff‖ + ((p.roots).map (fun a ↦ max 0 log ‖a‖)).sum := by
+  by_cases hp : p = 0; simp [hp]
+
+  /- rw [add_comm, logMahlerMeasure_def, MeromorphicOn.circleAverage_log_norm zero_ne_one.symm (by exact (analyticOnNhd_id.aeval_polynomial p).meromorphicOn)] -- fix later in PR
+  simp
+  have : meromorphicTrailingCoeffAt (fun x ↦ eval x p) 0 = p.eval 0 := by
+    rw [AnalyticAt.meromorphicTrailingCoeffAt_of_ne_zero]
+    --rw [AnalyticAt.meromorphicTrailingCoeffAt_of_eq_nhdsNE (g := (fun x ↦ eval x p))]
+
+    sorry
+    simp
+    --refine (ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE p.continuousAt  ?_).mpr ?_
+
+    sorry -/
+
+  sorry
+
 
 theorem logMahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖₊ + ((p.roots).map (fun a ↦ max 0 log ‖a‖₊)).sum := by
@@ -231,7 +287,7 @@ lemma l1 (p : ℂ[X]) : p.mahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖t
   rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖) ≤
       rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
     gcongr
-    apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos) (mahlerMeasure_integrable p) (by simp)
+    apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos) (intervalIntegrable_mahlerMeasure p) (by simp)
     simp only [Filter.EventuallyLE, Filter.eventually_iff_exists_mem]
     let v := {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
     use v
@@ -349,4 +405,4 @@ theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) : ‖p.coeff n�
     exact splits_iff_card_roots.mp (IsAlgClosed.splits p)
 
 end Polynomial
-#min_imports
+--#min_imports
