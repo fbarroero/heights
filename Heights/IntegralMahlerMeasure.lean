@@ -143,6 +143,15 @@ theorem logMahlerMeasure_mul_eq_add_logMahelerMeasure {p q : ℂ[X]} (hpq : p * 
 
 
 
+--pr this
+theorem posLog_eq_log_max_one {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
+  by_cases hx1 : 1 ≤ x
+  · simp only [hx1, sup_of_le_right]
+    rw [Real.posLog_eq_log]
+    simp [le_abs, hx1]
+  · simp_all only [not_le, posLog_def]
+    rw [max_eq_left (le_of_lt hx1), max_eq_left (log_nonpos hx <| le_of_lt hx1)]
+    exact log_one.symm
 
 /- lemma aaa (x : ℝ) (h : 0 < x) : x ≠ 0 := by
   exact Ne.symm (ne_of_lt h)
@@ -161,6 +170,7 @@ theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺
   rw [this]
   simp only [eval_sub, eval_X, eval_C, zero_sub, norm_neg, one_mul, log_inv, mul_neg, log_one,
     mul_zero, add_zero]
+
 
   /- have equalitylog : log (max 1 ‖z‖) = log ‖z‖ + log (min 1 ‖z‖⁻¹) := by
     rw [← log_mul (by simp [hz₀])]
@@ -224,23 +234,37 @@ theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺
     simp only [posLog_def, Int.cast_one, one_mul, neg_add_cancel, left_eq_sup, ge_iff_le]
     simp only [B, abs_one, Metric.mem_closedBall, dist_zero_right] at hzcb
     exact log_nonpos (norm_nonneg z) hzcb
+  · have : (Function.support fun u ↦ -(↑((divisor (fun x ↦ x - z) (Metric.closedBall 0 |1|)) u) *
+        log ‖u‖)) = ∅ := by
+      rw [Function.support_eq_empty_iff]
+      ext x
+      simp
+      rw [or_iff_not_imp_right]
+      simp only [not_or, and_imp]
+      intro _ h _
+      by_cases hx : x = z
+      · rw [hx] at h ⊢
+        /- have : z ∉ B := by
+          simp_all only [eval_sub, eval_X, eval_C, abs_one, ne_eq, Metric.mem_closedBall,
+            dist_zero_right, divisor_apply, Metric.mem_ball, not_lt, not_false_eq_true, not_le, B]
+          apply lt_of_le_of_ne hzBall fun a ↦ h (_root_.id (Eq.symm a)) -/
+        apply
+          Function.locallyFinsuppWithin.apply_eq_zero_of_notMem
+            (divisor (fun x ↦ x - z) (Metric.closedBall 0 |1|))
+        simp_all
+        exact lt_of_le_of_ne hzBall fun a ↦ h (_root_.id (Eq.symm a))
+      · exact hdiv0 x hx
+    rw [← finsum_mem_support]
+    simp [this] at hzBall ⊢
+    simp [posLog_eq_log_max_one <| norm_nonneg z, hzBall]
 
 
 
-  sorry
 
 
 
 
---pr this
-theorem posLog_eq_log_max_one {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
-  by_cases hx1 : 1 ≤ x
-  · simp only [hx1, sup_of_le_right]
-    rw [Real.posLog_eq_log]
-    simp [le_abs, hx1]
-  · simp_all only [not_le, posLog_def]
-    rw [max_eq_left (le_of_lt hx1), max_eq_left (log_nonpos hx <| le_of_lt hx1)]
-    exact log_one.symm
+
 
 theorem mahlerMeasure_X_sub_C (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z‖ := by
   have := logMahlerMeasure_X_sub_C z
