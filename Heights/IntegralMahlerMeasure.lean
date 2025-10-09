@@ -128,8 +128,7 @@ theorem mahlerMeasure_mul (p q : ℂ[X]) : (p * q).mahlerMeasure =
  -/
 
 theorem mahlerMeasure_pos_of_ne_zero {p : ℂ[X]} (hp : p ≠ 0) : 0 < p.mahlerMeasure := by
-  rw [mahlerMeasure_def_of_ne_zero hp]
-  apply exp_pos
+  grind [exp_pos, mahlerMeasure_def_of_ne_zero]
 
 theorem prod_mahlerMeasure_eq_mahlerMeasure_prod (s : Multiset ℂ[X]) :
     (s.prod).mahlerMeasure = (s.map (fun p ↦ p.mahlerMeasure)).prod := by
@@ -141,17 +140,9 @@ theorem logMahlerMeasure_mul_eq_add_logMahelerMeasure {p q : ℂ[X]} (hpq : p * 
     (p * q).logMahlerMeasure = p.logMahlerMeasure + q.logMahlerMeasure := by
   simp_all [logMahlerMeasure_eq_log_MahlerMeasure, mahlerMeasure_mul, log_mul]
 
-
-
---pr this
+--PRd
 theorem posLog_eq_log_max_one {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
-  by_cases hx1 : 1 ≤ x
-  · simp only [hx1, sup_of_le_right]
-    rw [Real.posLog_eq_log]
-    simp [le_abs, hx1]
-  · simp_all only [not_le, posLog_def]
-    rw [max_eq_left (le_of_lt hx1), max_eq_left (log_nonpos hx <| le_of_lt hx1)]
-    exact log_one.symm
+  grind [le_abs, posLog_eq_log, log_one, max_eq_left, log_nonpos, posLog_def]
 
 /- lemma aaa (x : ℝ) (h : 0 < x) : x ≠ 0 := by
   exact Ne.symm (ne_of_lt h)
