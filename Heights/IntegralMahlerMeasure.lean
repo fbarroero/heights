@@ -127,136 +127,103 @@ theorem mahlerMeasure_mul (p q : ℂ[X]) : (p * q).mahlerMeasure =
   · exact Set.InjOn.mono (fun _ hx ↦ hx.1) (injOn_circleMap_of_abs_sub_le (zero_ne_one' ℝ).symm (by simp [le_of_eq, pi_nonneg]))
  -/
 
-theorem mahlerMeasure_pos_of_ne_zero {p : ℂ[X]} (hp : p ≠ 0) : 0 < p.mahlerMeasure := by
+--In mathlib
+theorem mahlerMeasure_pos_of_ne_zero0 {p : ℂ[X]} (hp : p ≠ 0) : 0 < p.mahlerMeasure := by
   grind [exp_pos, mahlerMeasure_def_of_ne_zero]
 
-theorem prod_mahlerMeasure_eq_mahlerMeasure_prod (s : Multiset ℂ[X]) :
+--In mathlib
+theorem prod_mahlerMeasure_eq_mahlerMeasure_prod0 (s : Multiset ℂ[X]) :
     (s.prod).mahlerMeasure = (s.map (fun p ↦ p.mahlerMeasure)).prod := by
   induction' s using Multiset.induction_on with _ _ ih
   · simp
   · simp [mahlerMeasure_mul, ih]
 
-theorem logMahlerMeasure_mul_eq_add_logMahelerMeasure {p q : ℂ[X]} (hpq : p * q ≠ 0) :
+--In mathlib
+theorem logMahlerMeasure_mul_eq_add_logMahelerMeasure0 {p q : ℂ[X]} (hpq : p * q ≠ 0) :
     (p * q).logMahlerMeasure = p.logMahlerMeasure + q.logMahlerMeasure := by
   simp_all [logMahlerMeasure_eq_log_MahlerMeasure, mahlerMeasure_mul, log_mul]
 
---PRd
+--In mathlib
 theorem posLog_eq_log_max_one {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
   grind [le_abs, posLog_eq_log, log_one, max_eq_left, log_nonpos, posLog_def]
 
-/- lemma aaa (x : ℝ) (h : 0 < x) : x ≠ 0 := by
-  exact Ne.symm (ne_of_lt h)
- -/
-open MeromorphicOn in
+open MeromorphicOn Metric in
+@[simp]
 theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺ ‖z‖ := by
-  by_cases hz₀ : z = 0; simp [hz₀, logMahlerMeasure_X, posLog_def]
-  have hmeroAt (u : ℂ) : MeromorphicAt (fun x ↦ x - z) u :=
-    MeromorphicAt.fun_sub (MeromorphicAt.id u) (MeromorphicAt.const z u)
-  rw [logMahlerMeasure_def, MeromorphicOn.circleAverage_log_norm zero_ne_one.symm  (by exact (analyticOnNhd_id.aeval_polynomial (X - C z)).meromorphicOn)]
-  have : meromorphicTrailingCoeffAt (fun x ↦ eval x (X - C z)) 0 = -z := by
-    rw [AnalyticAt.meromorphicTrailingCoeffAt_of_ne_zero
-      (AnalyticAt.aeval_polynomial analyticAt_id (X - C z))]
-    · simp
-    · simp [hz₀]
+  by_cases hz₀ : z = 0
+  · simp [hz₀, posLog_def]
+  have hmeroOn (U : Set ℂ) : MeromorphicOn (fun x ↦ x - z) U :=
+    (MeromorphicOn.id).sub <| const z
+  have hmeroAt (u : ℂ) : MeromorphicAt (fun x ↦ x - z) u := hmeroOn (Eq u) u rfl
+  have hmeroBall : MeromorphicOn (fun x ↦ x - z) (closedBall 0 |1|) :=
+    hmeroOn (closedBall 0 |1|)
+  have : MeromorphicOn (fun x ↦ (X - C z).eval x) (closedBall 0 |1|) :=
+    (analyticOnNhd_id.aeval_polynomial (X - C z)).meromorphicOn
+  rw [logMahlerMeasure_def, circleAverage_log_norm zero_ne_one.symm this]
+  --get rid of the `meromorphicTrailingCoeffAt`
+  have : meromorphicTrailingCoeffAt (fun x ↦ (X - C z).eval x) 0 = -z := by
+    rw [(AnalyticAt.aeval_polynomial analyticAt_id (X - C z)).meromorphicTrailingCoeffAt_of_ne_zero
+      (by simp [hz₀])]
+    simp
   rw [this]
   simp only [eval_sub, eval_X, eval_C, zero_sub, norm_neg, one_mul, log_inv, mul_neg, log_one,
     mul_zero, add_zero]
-
-
-  /- have equalitylog : log (max 1 ‖z‖) = log ‖z‖ + log (min 1 ‖z‖⁻¹) := by
-    rw [← log_mul (by simp [hz₀])]
-    congr
-    by_cases h1 : ‖z‖ ≤ 1;
-    · simp [h1]
-
-      sorry
-    · sorry
-    apply ne_of_gt
-    simp [hz₀] -/
-
-  have hmeroOn (U : Set ℂ) : MeromorphicOn (fun x ↦ x - z) U :=
-    MeromorphicOn.sub MeromorphicOn.id <| MeromorphicOn.const z
-
-  let B := (Metric.closedBall (0 : ℂ) |1|)
-  have hmeroBall : MeromorphicOn (fun x ↦ x - z) B := hmeroOn B
-
-  have hdiv0 (u : ℂ) (hu : u ≠ z) : (divisor (fun x ↦ x - z) B) u = 0 := by
+  -- divisor computations
+  let B := closedBall (0 : ℂ) |1|
+  have hdiv0 {u : ℂ} (hu : u ≠ z) : divisor (fun x ↦ x - z) B u = 0 := by
     by_cases hu' : u ∈ B
-    · rw [divisor_apply (hmeroBall) hu', ← WithTop.untop₀_coe 0]
+    · rw [divisor_apply (hmeroOn B) hu', ← WithTop.untop₀_coe 0]
       congr
       rw [meromorphicOrderAt_eq_int_iff (hmeroAt u)]
       use fun x ↦ x - z
       simp only [zpow_zero, smul_eq_mul, one_mul, Filter.eventually_true, and_true]
-      exact ⟨AnalyticAt.fun_sub analyticAt_id analyticAt_const, sub_ne_zero_of_ne hu⟩
+      exact ⟨analyticAt_id.fun_sub analyticAt_const, sub_ne_zero_of_ne hu⟩
     · simp_all
-  have hzdiv1 (h : z ∈ B): (divisor (fun x ↦ x - z) B) z = 1 := by
+  have hzdiv1 (h : z ∈ B) : (divisor (fun x ↦ x - z) B) z = 1 := by
       simp_all only [eval_sub, eval_X, eval_C, divisor_apply]
       rw [← WithTop.untop₀_coe 1]
       congr
-      rw [meromorphicOrderAt_eq_int_iff]
-      simp_all
+      rw [meromorphicOrderAt_eq_int_iff (hmeroAt z)]
+      simp only [ne_eq, zpow_one, smul_eq_mul]
       use fun x ↦ 1
       simpa using analyticAt_const
-      exact hmeroAt z
-  by_cases hzBall : z ∈ Metric.ball 0 |1|;
-  · have hzcb : z ∈ B := by
-      rw [mem_ball_zero_iff] at hzBall
-      simp_all only [eval_sub, eval_X, eval_C, abs_one, ne_eq, Metric.mem_closedBall,
-        dist_zero_right, divisor_apply, B]
-      exact le_of_lt hzBall
+  --separate cases depending on whether z in in the open ball 0 |1| or not
+  by_cases hzBall : z ∈ ball 0 |1|;
+  · have : ‖z‖ < 1 := by rwa [mem_ball, dist_zero_right, abs_one] at hzBall
+    have : ‖z‖ ≤ 1 := le_of_lt this
+    have hzcb : z ∈ B := Set.mem_of_mem_of_subset hzBall ball_subset_closedBall
     rw [← finsum_mem_support]
-    have : (Function.support fun u ↦ -(↑((divisor (fun x ↦ x - z) (Metric.closedBall 0 |1|)) u) *
-        log ‖u‖)) = {z} := by
+    have : (fun u ↦ -((divisor (fun x ↦ x - z) (closedBall 0 |1|) u) * log ‖u‖)).support = {z} := by
       rw [Function.support_eq_iff]
       constructor
-      · intro u hu
+      · simp only [ne_eq, neg_eq_zero, mul_eq_zero, Int.cast_eq_zero, log_eq_zero, norm_eq_zero]
+        grind [norm_nonneg, ne_of_lt]
+      · intro _ hu
         rw [Set.mem_singleton_iff] at hu
-        rw [hu, hzdiv1 hzcb]
-        simp_all [B]
-        refine ⟨ne_of_lt hzBall,?_⟩
-        have := norm_nonneg z
-        linarith
-      · intro u hu
-        simp only [Set.mem_singleton_iff] at hu
-        rw [hdiv0 u hu]
+        rw [hdiv0 hu]
         simp
     simp only [this, Set.mem_singleton_iff, finsum_cond_eq_left]
     rw [hzdiv1 hzcb]
-    simp only [posLog_def, Int.cast_one, one_mul, neg_add_cancel, left_eq_sup, ge_iff_le]
-    simp only [B, abs_one, Metric.mem_closedBall, dist_zero_right] at hzcb
-    exact log_nonpos (norm_nonneg z) hzcb
-  · have : (Function.support fun u ↦ -(↑((divisor (fun x ↦ x - z) (Metric.closedBall 0 |1|)) u) *
-        log ‖u‖)) = ∅ := by
+    grind [log_nonpos , norm_nonneg, posLog_def]
+  · have h1lez : 1 ≤ ‖z‖ := by grind [mem_ball, dist_zero_right, abs_one]
+    rw [← finsum_mem_support]
+    have : (fun u ↦ -((divisor (fun x ↦ x - z) (closedBall 0 |1|) u) * log ‖u‖)).support = ∅ := by
       rw [Function.support_eq_empty_iff]
       ext x
-      simp
+      simp only [Pi.zero_apply, neg_eq_zero, mul_eq_zero, Int.cast_eq_zero, log_eq_zero,
+        norm_eq_zero]
       rw [or_iff_not_imp_right]
       simp only [not_or, and_imp]
       intro _ h _
       by_cases hx : x = z
       · rw [hx] at h ⊢
-        /- have : z ∉ B := by
-          simp_all only [eval_sub, eval_X, eval_C, abs_one, ne_eq, Metric.mem_closedBall,
-            dist_zero_right, divisor_apply, Metric.mem_ball, not_lt, not_false_eq_true, not_le, B]
-          apply lt_of_le_of_ne hzBall fun a ↦ h (_root_.id (Eq.symm a)) -/
-        apply
-          Function.locallyFinsuppWithin.apply_eq_zero_of_notMem
-            (divisor (fun x ↦ x - z) (Metric.closedBall 0 |1|))
-        simp_all
-        exact lt_of_le_of_ne hzBall fun a ↦ h (_root_.id (Eq.symm a))
-      · exact hdiv0 x hx
-    rw [← finsum_mem_support]
-    simp [this] at hzBall ⊢
-    simp [posLog_eq_log_max_one <| norm_nonneg z, hzBall]
+        apply Function.locallyFinsuppWithin.apply_eq_zero_of_notMem
+          (divisor (fun x ↦ x - z) (closedBall 0 |1|))
+        grind [abs_one, mem_closedBall, dist_zero_right]
+      · exact hdiv0 hx
+    simp [this, posLog_eq_log_max_one <| norm_nonneg z, h1lez]
 
-
-
-
-
-
-
-
-
+@[simp]
 theorem mahlerMeasure_X_sub_C (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z‖ := by
   have := logMahlerMeasure_X_sub_C z
   rw [logMahlerMeasure_eq_log_MahlerMeasure] at this
@@ -266,17 +233,28 @@ theorem mahlerMeasure_X_sub_C (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z�
     Real.exp_log (lt_of_lt_of_le zero_lt_one <| le_max_left 1 ‖z‖)] at this
   exact this
 
+open Multiset in
+lemma aux {s : Multiset ℝ} (h : ∀ x ∈ s, x ≠ 0) : log s.prod = (s.map (fun x ↦ log x)).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    simp_all only [ne_eq, mem_cons, or_true, not_false_eq_true, implies_true, forall_const,
+      forall_eq_or_imp, prod_cons, map_cons, sum_cons]
+    have : s.prod ≠ 0 := by
+      apply prod_ne_zero
+      grind
+    rw [log_mul h.1 this, add_right_inj, ih]
+
 theorem logMahlerMeasure_eq (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖ + ((p.roots).map (fun a ↦ log⁺ ‖a‖)).sum := by
   by_cases hp : p = 0
   · simp [hp]
+  have : ∀ x ∈ Multiset.map (fun x ↦ max 1 ‖x‖) p.roots, x ≠ 0 := by grind [Multiset.mem_map]
   nth_rw 1 [eq_prod_roots_of_splits_id (IsAlgClosed.splits p)]
   rw [logMahlerMeasure_mul_eq_add_logMahelerMeasure (by simp [hp, X_sub_C_ne_zero])]
-  simp [logMahlerMeasure_const, add_right_inj, posLog_eq_log_max_one]
-  rw [logMahlerMeasure_eq_log_MahlerMeasure]
-  simp only [prod_mahlerMeasure_eq_mahlerMeasure_prod, Multiset.map_map, Function.comp_apply, mahlerMeasure_X_sub_C]
+  simp [posLog_eq_log_max_one,logMahlerMeasure_eq_log_MahlerMeasure,
+    prod_mahlerMeasure_eq_mahlerMeasure_prod, aux this]
 
-  sorry
 
 
 
@@ -500,4 +478,3 @@ theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) : ‖p.coeff n�
     exact splits_iff_card_roots.mp (IsAlgClosed.splits p)
 
 end Polynomial
---#min_imports
