@@ -147,7 +147,12 @@ theorem logMahlerMeasure_mul_eq_add_logMahelerMeasure0 {p q : ℂ[X]} (hpq : p *
 theorem posLog_eq_log_max_one {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
   grind [le_abs, posLog_eq_log, log_one, max_eq_left, log_nonpos, posLog_def]
 
+theorem logMahlerMeasure_C_mul {a : ℂ} (ha : a ≠ 0) {p : ℂ[X]} (hp : p ≠ 0) :
+    (C a * p).logMahlerMeasure = log ‖a‖ + p.logMahlerMeasure := by
+  rw [logMahlerMeasure_mul_eq_add_logMahelerMeasure (by simp [ha, hp]), logMahlerMeasure_const]
+
 open MeromorphicOn Metric in
+/-- The logarithmic Mahler measure of `X - C z` is `log⁺` of the absolute value of `z`. -/
 @[simp]
 theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺ ‖z‖ := by
   by_cases hz₀ : z = 0
@@ -224,17 +229,46 @@ theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺
     simp [this, posLog_eq_log_max_one <| norm_nonneg z, h1lez]
 
 @[simp]
+theorem logMahlerMeasure_X_add_C (z : ℂ) : (X + C z).logMahlerMeasure = log⁺ ‖z‖ := by
+  simp [← sub_neg_eq_add, ← map_neg]
+
+theorem logMahlerMeasure_C_mul_X_add_C {a : ℂ} (b : ℂ) (ha : a ≠ 0) :
+    (C a * X + C b).logMahlerMeasure = log ‖a‖ + log⁺ ‖a⁻¹ * b‖ := by
+  rw [show C a * X + C b = C a * (X + C (a⁻¹ * b)) by simp [mul_add, ← map_mul, ha],
+    logMahlerMeasure_C_mul ha (X_add_C_ne_zero (a⁻¹ * b)), logMahlerMeasure_X_add_C]
+
+theorem logMahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.logMahlerMeasure =
+    log ‖p.coeff 1‖ + log⁺ ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
+  rw [eq_X_add_C_of_degree_le_one (le_of_eq h)]
+  simp [logMahlerMeasure_C_mul_X_add_C _ (show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h)]
+
+/-- The Mahler measure of `X - C z` equals `max 1 ‖z‖`. -/
+@[simp]
 theorem mahlerMeasure_X_sub_C (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z‖ := by
   have := logMahlerMeasure_X_sub_C z
   rw [logMahlerMeasure_eq_log_MahlerMeasure] at this
   apply_fun exp at this
-  rw [posLog_eq_log_max_one (norm_nonneg z),
-    Real.exp_log (mahlerMeasure_pos_of_ne_zero <| X_sub_C_ne_zero z),
-    Real.exp_log (lt_of_lt_of_le zero_lt_one <| le_max_left 1 ‖z‖)] at this
-  exact this
+  rwa [posLog_eq_log_max_one (norm_nonneg z),
+    exp_log (mahlerMeasure_pos_of_ne_zero <| X_sub_C_ne_zero z),
+    exp_log (lt_of_lt_of_le zero_lt_one <| le_max_left 1 ‖z‖)] at this
 
+@[simp]
+theorem mahlerMeasure_X_add_C (z : ℂ) : (X + C z).mahlerMeasure = max 1 ‖z‖ := by
+  simp [← sub_neg_eq_add, ← map_neg]
+
+theorem mahlerMeasure_C_mul_X_add_C {a : ℂ} (b : ℂ) (ha : a ≠ 0) :
+    (C a * X + C b).mahlerMeasure = ‖a‖ * max 1 ‖a⁻¹ * b‖ := by
+  simp [show C a * X + C b = C a * (X + C (a⁻¹ * b)) by simp [mul_add, ← map_mul, ha],
+    mahlerMeasure_mul, -map_mul]
+
+theorem mahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.mahlerMeasure =
+    ‖p.coeff 1‖ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
+  rw [eq_X_add_C_of_degree_le_one (le_of_eq h)]
+  simp [mahlerMeasure_C_mul_X_add_C _ (show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h)]
+
+--put somewhere
 open Multiset in
-lemma aux {s : Multiset ℝ} (h : ∀ x ∈ s, x ≠ 0) : log s.prod = (s.map (fun x ↦ log x)).sum := by
+lemma log_prod_eq_sum_log {s : Multiset ℝ} (h : ∀ x ∈ s, x ≠ 0) : log s.prod = (s.map (fun x ↦ log x)).sum := by
   induction s using Multiset.induction_on with
   | empty => simp
   | cons a s ih =>
@@ -245,7 +279,10 @@ lemma aux {s : Multiset ℝ} (h : ∀ x ∈ s, x ≠ 0) : log s.prod = (s.map (f
       grind
     rw [log_mul h.1 this, add_right_inj, ih]
 
-theorem logMahlerMeasure_eq (p : ℂ[X]) : p.logMahlerMeasure =
+/-- The logarithmic Mahler measure of `p` is the `log` of the absolute value of its leading
+  coefficient plus the sum of the `log`s of the absolute values of its roots lying outside the unit
+  disk. -/
+theorem logMahlerMeasure_eq_log_leadingCoeff_add_sum_log_roots (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖ + ((p.roots).map (fun a ↦ log⁺ ‖a‖)).sum := by
   by_cases hp : p = 0
   · simp [hp]
@@ -253,62 +290,32 @@ theorem logMahlerMeasure_eq (p : ℂ[X]) : p.logMahlerMeasure =
   nth_rw 1 [eq_prod_roots_of_splits_id (IsAlgClosed.splits p)]
   rw [logMahlerMeasure_mul_eq_add_logMahelerMeasure (by simp [hp, X_sub_C_ne_zero])]
   simp [posLog_eq_log_max_one,logMahlerMeasure_eq_log_MahlerMeasure,
-    prod_mahlerMeasure_eq_mahlerMeasure_prod, aux this]
+    prod_mahlerMeasure_eq_mahlerMeasure_prod, log_prod_eq_sum_log this]
 
+/-- The Mahler measure of `p` is the the absolute value of its leading coefficient times the product
+  absolute values of its roots lying outside the unit disk. -/
+theorem mahlerMeasure_eq_leadingCoeff_mul_prod_roots (p : ℂ[X]) : p.mahlerMeasure =
+    ‖p.leadingCoeff‖ * ((p.roots).map (fun a ↦ max 1 ‖a‖)).prod := by
+  by_cases hp : p = 0; simp [hp]
+  have := logMahlerMeasure_eq_log_leadingCoeff_add_sum_log_roots p
+  rw [logMahlerMeasure_eq_log_MahlerMeasure] at this
+  apply_fun exp at this
+  rw [exp_add, exp_log <| mahlerMeasure_pos_of_ne_zero0 hp,
+    exp_log <|norm_pos_iff.mpr <| leadingCoeff_ne_zero.mpr hp] at this
+  simp [this, exp_multiset_sum, posLog_eq_log_max_one, exp_log]
 
+----------
 
 
 theorem logMahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖₊ + ((p.roots).map (fun a ↦ log⁺ ‖a‖₊)).sum := by
-  simp [logMahlerMeasure_eq]
-
-theorem mahlerMeasure_eq (p : ℂ[X]) : p.mahlerMeasure =
-    ‖p.leadingCoeff‖ * ((p.roots).map (fun a ↦ max 1 ‖a‖)).prod := by
-  by_cases hp : p = 0; simp [hp]
-  simp only [mahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
-    Pi.sup_apply, Pi.zero_apply]
-  rw [exp_add, exp_log (norm_pos_iff.mpr <| leadingCoeff_ne_zero.mpr hp)]
-  simp only [exp_multiset_sum, Multiset.map_map, Function.comp_apply, mul_eq_mul_left_iff,
-    norm_eq_zero, leadingCoeff_eq_zero, hp, or_false]
-  apply congr_arg _ <| Multiset.map_congr rfl _
-  intro x hx
-  rw [posLog_eq_log_max_one (norm_nonneg x)]
-  apply exp_log
-  simp
-
+  simp [logMahlerMeasure_eq_log_leadingCoeff_add_sum_log_roots]
 
 theorem MahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.mahlerMeasure =
     ‖p.leadingCoeff‖₊ * ((p.roots).map (fun a ↦ max 1 ‖a‖₊)).prod := by
   by_cases hp : p = 0; simp [hp]
   push_cast
-  simp [mahlerMeasure_eq]
-
-@[simp]
-theorem MahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).mahlerMeasure =
-    ‖z₁‖ * max 1 ‖z₁⁻¹ * z₀‖ := by
-  have hpol : C z₁ * X + C z₀ ≠ 0 := by simp [← degree_ne_bot, h1]
-  simp only [mahlerMeasure, ne_eq, hpol, not_false_eq_true, ↓reduceIte, logMahlerMeasure_eq,
-    roots_C_mul_X_add_C z₀ h1, Pi.sup_apply, Pi.zero_apply, Multiset.map_singleton, norm_neg,
-    Complex.norm_mul, norm_inv, Multiset.sum_singleton]
-  rw [exp_add, exp_log (norm_pos_iff.mpr <| leadingCoeff_ne_zero.mpr hpol), posLog_def]
-  simp [Monotone.map_max exp_monotone, exp_zero]
-  by_cases hz₀ : z₀ = 0; simp [hz₀]
-  congr
-  · simp [leadingCoeff, h1]
-  · rw [exp_log (mul_pos (inv_pos.mpr <| norm_pos_iff.mpr h1)
-      <| norm_pos_iff.mpr hz₀)]
-
-@[simp]
-theorem MahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.mahlerMeasure =
-    ‖p.coeff 1‖ * max 1 ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
-  rw [eq_X_add_C_of_degree_le_one (show degree p ≤ 1 by rw [h])]
-  simp [show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h]
-
-@[simp]
-theorem logMahlerMeasure_C_mul_X_add_C {z₁ z₀ : ℂ} (h1 : z₁ ≠ 0) : (C z₁ * X + C z₀).logMahlerMeasure =
-    log (‖z₁‖ * max 1 ‖z₁⁻¹ * z₀‖) := by
-  have hpol : C z₁ * X + C z₀ ≠ 0 := by simp [← degree_ne_bot, h1]
-  rw [logMahlerMeasure_eq_log_MahlerMeasure, MahlerMeasure_C_mul_X_add_C h1]
+  simp [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
 
 lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) :
     1 ≤ (p.roots.map (fun a ↦ max 1 ‖a‖)).prod := by
@@ -318,12 +325,12 @@ lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) :
   exact le_max_left 1 ‖a‖
 
 lemma leading_coeff_le_mahlerMeasure (p : ℂ[X]) : ‖p.leadingCoeff‖ ≤ p.mahlerMeasure := by
-  rw [mahlerMeasure_eq]
+  rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
   exact le_mul_of_one_le_right (norm_nonneg p.leadingCoeff) (one_le_prod_max_one_norm_roots p)
 
 lemma prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]}
     (hlc : 1 ≤ ‖p.leadingCoeff‖) : (p.roots.map (fun a ↦ max 1 ‖a‖)).prod ≤ p.mahlerMeasure := by
-  rw [mahlerMeasure_eq]
+  rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
   exact le_mul_of_one_le_left (le_trans zero_le_one (one_le_prod_max_one_norm_roots p)) hlc
 
 -- not sure this is useful
