@@ -307,36 +307,33 @@ theorem mahlerMeasure_eq_leadingCoeff_mul_prod_roots (p : ℂ[X]) : p.mahlerMeas
 ----------
 
 
-theorem logMahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.logMahlerMeasure =
+/- theorem logMahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.logMahlerMeasure =
     log ‖p.leadingCoeff‖₊ + ((p.roots).map (fun a ↦ log⁺ ‖a‖₊)).sum := by
-  simp [logMahlerMeasure_eq_log_leadingCoeff_add_sum_log_roots]
+  simp [logMahlerMeasure_eq_log_leadingCoeff_add_sum_log_roots] -/
 
-theorem MahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.mahlerMeasure =
+--try to get rid of this, used in norm_coeff_le_binom_mahlerMeasure
+theorem mahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.mahlerMeasure =
     ‖p.leadingCoeff‖₊ * ((p.roots).map (fun a ↦ max 1 ‖a‖₊)).prod := by
   by_cases hp : p = 0; simp [hp]
   push_cast
   simp [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
-
-lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) :
-    1 ≤ (p.roots.map (fun a ↦ max 1 ‖a‖)).prod := by
-  refine Multiset.one_le_prod ?_
-  simp only [Multiset.mem_map]
-  rintro _ ⟨a, _, rfl⟩
-  exact le_max_left 1 ‖a‖
+/-
+lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) : 1 ≤ (p.roots.map (fun a ↦ max 1 ‖a‖)).prod := by
+  grind [Multiset.one_le_prod, Multiset.mem_map]
 
 lemma leading_coeff_le_mahlerMeasure (p : ℂ[X]) : ‖p.leadingCoeff‖ ≤ p.mahlerMeasure := by
   rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
   exact le_mul_of_one_le_right (norm_nonneg p.leadingCoeff) (one_le_prod_max_one_norm_roots p)
 
-lemma prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]}
+lemma prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leadingCoeff {p : ℂ[X]}
     (hlc : 1 ≤ ‖p.leadingCoeff‖) : (p.roots.map (fun a ↦ max 1 ‖a‖)).prod ≤ p.mahlerMeasure := by
   rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
   exact le_mul_of_one_le_left (le_trans zero_le_one (one_le_prod_max_one_norm_roots p)) hlc
-
--- not sure this is useful
+ -/
+/-
 theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤ ‖p.leadingCoeff‖) :
     (p.roots.map (fun x ↦ ‖x‖₊)).sup ≤ p.mahlerMeasure := by
-  apply le_trans _ <| prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leading_coeff hlc
+  apply le_trans _ <| prod_max_one_norm_roots_le_mahlerMeasure_of_one_le_leadingCoeff hlc
   have : (Multiset.map (fun a ↦ 1 ⊔ ‖a‖) p.roots).prod = (Multiset.map (fun a ↦ 1 ⊔ ‖a‖₊) p.roots).prod := by
     norm_cast
     simp
@@ -349,103 +346,110 @@ theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤
   refine Multiset.single_le_prod ?_ (1 ⊔ ‖x‖₊) (Multiset.mem_map_of_mem (fun a ↦ 1 ⊔ ‖a‖₊) hx)
   simp only [Multiset.mem_map]
   rintro _ ⟨_, _, rfl⟩
-  simp
+  simp -/
 
-private lemma bar (p q : Prop) : (p → q) ∧ p ↔ (p ∧ q) := by
-  apply Iff.intro
-  · intro a
-    simp_all only [and_self]
-  · intro a
-    simp_all only [imp_self, and_self]
-
---TODO: golf
-open Set in
-lemma l1 (p : ℂ[X]) : p.mahlerMeasure ≤  ∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖ := by
+open Filter MeasureTheory Set in
+lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤
+    ∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖ := by
   by_cases hp : p = 0; simp [hp]
-  simp only [mahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure, mul_inv_rev, circleAverage_def, smul_eq_mul]
-  calc
-  rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log ‖eval (circleMap 0 1 x) p‖) ≤
-      rexp (π⁻¹ * 2⁻¹ * ∫ (x : ℝ) in (0)..(2 * π), log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
+  simp only [mahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure]
+  have : (circleAverage (fun x ↦ log ‖eval x p‖) 0 1) ≤
+      (circleAverage (fun x ↦ log (∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖)) 0 1):= by
+    simp only [circleAverage_def, mul_inv_rev, smul_eq_mul]
     gcongr
-    apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos) (intervalIntegrable_mahlerMeasure p) (by simp)
-    simp only [Filter.EventuallyLE, Filter.eventually_iff_exists_mem]
-    let v := {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
-    use v
+    apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos)
+      (intervalIntegrable_mahlerMeasure p) (by simp)
+    simp only [EventuallyLE, eventually_iff_exists_mem]
+    use {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
     constructor
-    · rw [MeasureTheory.mem_ae_iff]
-      simp only [compl, ne_eq, mem_setOf_eq, not_and, Decidable.not_not, and_imp,
-        measurableSet_Icc, MeasureTheory.Measure.restrict_apply', Inter.inter, Set.inter, v, bar]
-      refine Set.Finite.measure_zero ?_ MeasureTheory.volume
-      have h1 : {a | a ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} \ {2 * π} = {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by
+    · rw [mem_ae_iff]
+      have : {a | (a ∈ Icc 0 (2 * π) → eval (circleMap 0 1 a) p = 0) ∧ a ∈ Icc 0 (2 * π)}
+          = {a | a ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by aesop
+      simp only [compl, mem_setOf_eq, not_and, Decidable.not_not, measurableSet_Icc,
+        Measure.restrict_apply', Inter.inter, Set.inter, this]
+      apply Finite.measure_zero _
+      have : {a | a ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} \ {2 * π} =
+          {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by
         ext x
-        simp only [mem_Icc, mem_diff, mem_setOf_eq, mem_singleton_iff, mem_Ico, v]
-        apply Iff.intro
-        · intro a
-          simp_all only [true_and, and_true, v]
-          obtain ⟨left, right⟩ := a
-          obtain ⟨left, right_1⟩ := left
-          obtain ⟨left, right_2⟩ := left
-          exact lt_of_le_of_ne right_2 right
-        · intro a
-          simp_all only [true_and, and_true, v]
-          obtain ⟨left, right⟩ := a
-          obtain ⟨left, right_1⟩ := left
-          apply And.intro
-          · exact le_of_lt right_1
-          · apply Aesop.BuiltinRules.not_intro
-            intro a
-            subst a
-            simp_all only [Nat.ofNat_pos, mul_nonneg_iff_of_pos_left, lt_self_iff_false, v]
-      have : {a | a ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0}.Finite ↔ {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0}.Finite := by
-        constructor
-        · intro h
-          rw [← h1]
-          exact Finite.diff h
-        · intro h
-          apply Set.Finite.of_diff (t := {2 * π})
-          rw [← h1] at h
-          exact h
-          exact finite_singleton (2 * π)
+        grind
+      apply Finite.of_diff _ <| finite_singleton (2 * π)
       rw [this]
-      apply Set.Finite.of_finite_image (f := circleMap 0 1)
-      · apply Set.Finite.subset (Multiset.finite_toSet (p.roots))
-        simp_all only [mem_Icc, mem_Ico, mem_roots', ne_eq, not_false_eq_true, IsRoot.def, true_and, image_subset_iff,
-          preimage_setOf_eq, setOf_subset_setOf, implies_true, v]
-      · intro _ hx _ hy h
-        exact injOn_circleMap_of_abs_sub_le' (c := 0) (one_ne_zero) (by linarith) hx.1 hy.1 h
+      apply Finite.of_finite_image (f := circleMap 0 1)
+      · apply (Multiset.finite_toSet (p.roots)).subset
+        simp_all
+      · exact fun _ h _ k l ↦ injOn_circleMap_of_abs_sub_le' (one_ne_zero) (by linarith) h.1 k.1 l
     · intro x hx
-      gcongr; simp_all [v]
-      simp only [eval, eval₂, RingHom.id_apply, toFn, LinearMap.pi_apply, lcoeff_apply, v]
-      trans p.sum (fun i a ↦ ‖a * (circleMap 0 1 x) ^ i‖)
-      · -- generalise this, triangular ineq for Polynomial.sum
-        simp only [sum, Complex.norm_mul, norm_pow, norm_circleMap_zero, abs_one, one_pow, mul_one,
-        v]
-        refine norm_sum_le_of_le p.support ?_
+      gcongr
+      · simp_all
+      simp only [eval, eval₂, RingHom.id_apply]
+      calc
+      ‖p.sum fun e a ↦ a * circleMap 0 1 x ^ e‖ ≤
+          p.sum (fun i a ↦ ‖a * (circleMap 0 1 x) ^ i‖) := by
+        apply norm_sum_le_of_le p.support
         simp
-      · --sum_eq_of_subset
-        simp only [Complex.norm_mul, norm_pow, norm_circleMap_zero, abs_one, one_pow, mul_one, v]
-        rw [sum_eq_of_subset (s := Finset.range (p.natDegree + 1)) _ (by simp) supp_subset_range_natDegree_succ]
-        apply le_of_eq
+      _ = ∑ i : Fin (p.natDegree + 1), ‖p.coeff ↑i‖ := by
+        simp only [norm_mul, norm_pow, norm_circleMap_zero, abs_one, one_pow, mul_one]
+        rw [sum_eq_of_subset _ (by simp) supp_subset_range_natDegree_succ]
         exact Finset.sum_range fun i ↦ ‖p.coeff i‖
-  _ ≤ rexp (log (∑ i : Fin (p.natDegree + 1), ‖toFn (p.natDegree + 1) p i‖)) := by
-    gcongr
-    simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
-    ring_nf
-    simp [pi_ne_zero]
-  _ ≤ ∑ i : Fin (p.natDegree + 1), ‖(toFn (p.natDegree + 1)) p i‖ := by
-    rw [exp_log]
-    apply Finset.sum_pos' (fun i _ ↦ norm_nonneg (toFn (p.natDegree + 1) p i))
+  have : 0 < ∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖ := by
+    apply Finset.sum_pos' (fun (i : Fin (p.natDegree + 1)) _ ↦ norm_nonneg (p.coeff i))
     use ⟨p.natDegree, lt_add_one p.natDegree⟩
-    simp only [Finset.mem_univ, norm_pos_iff, ne_eq, true_and]
-    contrapose hp
-    simp_all [toFn]
+    simp_all
+  calc
+  rexp (circleAverage (fun x ↦ log ‖eval x p‖) 0 1) ≤
+      rexp (circleAverage (fun x ↦ log (∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖)) 0 1) := by
+    gcongr
+  _ ≤ ∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖ := by
+    simp [circleAverage_def, mul_assoc, exp_log this]
 
 open Multiset in
-theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) : ‖p.coeff n‖₊ ≤ (p.natDegree).choose (p.natDegree - n) * p.mahlerMeasure := by
+theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) :
+    ‖p.coeff n‖ ≤ (p.natDegree).choose (p.natDegree - n) * p.mahlerMeasure := by
+  by_cases hp : p = 0; simp [hp]
+  by_cases hn: p.natDegree < n
+  · simp [coeff_eq_zero_of_natDegree_lt hn, le_of_lt hn, mahlerMeasure_nonneg]
+  rw [not_lt] at hn
+  rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots,
+    coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits p)) hn, mul_assoc]
+  simp only [norm_mul, norm_pow, norm_neg, one_mem, CStarRing.norm_of_mem_unitary, one_pow, one_mul]
+  conv => enter [2]; rw [← mul_assoc, mul_comm _ ‖p.leadingCoeff‖, mul_assoc]
+  rw [mul_le_mul_iff_right₀ (by simp [leadingCoeff_ne_zero.mpr hp]), esymm,
+    Finset.sum_multiset_map_count]
+  apply le_trans <| norm_sum_le _ _
+  simp only [nsmul_eq_mul, norm_mul, _root_.norm_natCast]
+  let S := (powersetCard (p.natDegree - n) p.roots)
+  calc
+  ∑ x ∈ S.toFinset, (count x S) * ‖x.prod‖
+     ≤ ∑ x ∈ S.toFinset, (count x S) * ((p.roots).map (fun a ↦ max 1 ‖a‖)).prod := by
+    gcongr with x hx
+    simp only [mem_toFinset, mem_powersetCard, S] at hx
+    rw [Finset.prod_multiset_map_count, Finset.prod_multiset_count, norm_prod]
+    simp only [norm_pow]
+    calc
+    ∏ x_1 ∈ x.toFinset, ‖x_1‖ ^ count x_1 x
+      ≤ ∏ x_1 ∈ x.toFinset, (1 ⊔ ‖x_1‖) ^ count x_1 x := by
+      gcongr with a
+      exact le_max_right 1 ‖a‖
+    _ ≤ ∏ m ∈ p.roots.toFinset, (1 ⊔ ‖m‖) ^ count m x := by
+      simp only [← coe_nnnorm]
+      norm_cast
+      apply Finset.prod_le_prod_of_subset_of_one_le' (toFinset_subset.mpr (subset_of_le hx.1))
+      exact fun a _ _ ↦ one_le_pow₀ (le_max_left 1 ‖a‖)
+    _ ≤ ∏ m ∈ p.roots.toFinset, (1 ⊔ ‖m‖) ^ count m p.roots := by
+      gcongr with a
+      · exact le_max_left 1 ‖a‖
+      · exact hx.1
+  _  ≤ ↑(p.natDegree.choose (p.natDegree - n)) * (Multiset.map (fun a ↦ 1 ⊔ ‖a‖) p.roots).prod := by
+
+    sorry
+
+
+open Multiset in
+theorem norm_coeff_le_binom_mahlerMeasure' (n : ℕ) (p : ℂ[X]) : ‖p.coeff n‖₊ ≤ (p.natDegree).choose (p.natDegree - n) * p.mahlerMeasure := by
   by_cases hp : p = 0; simp [hp]
   by_cases hn: p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt hn, le_of_lt hn, mahlerMeasure_nonneg]
   rw [not_lt] at hn
-  rw [MahlerMeasure_eq_nnnorm, coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits p)) hn]
+  rw [mahlerMeasure_eq_nnnorm, coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits p)) hn]
   norm_cast
   rw [← mul_assoc, mul_comm _ ‖p.leadingCoeff‖₊, mul_assoc ‖p.leadingCoeff‖₊]
   simp [nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one, one_pow, mul_one]
