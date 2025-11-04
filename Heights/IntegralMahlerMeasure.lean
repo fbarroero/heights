@@ -348,11 +348,56 @@ theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤
   rintro _ ⟨_, _, rfl⟩
   simp -/
 
+
 open Filter MeasureTheory Set in
-lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤
+/-- The Mahler measure of a polynomial is bounded above by the sum of the norms of its coefficients.
+-/
+lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum fun _ a ↦ ‖a‖ := by
+  by_cases hp : p = 0; simp [hp]
+  simp only [mahlerMeasure, ne_eq, hp, logMahlerMeasure]
+  have : 0 < p.sum fun x a ↦ ‖a‖ := by
+    apply Finset.sum_pos' (fun i _ ↦ norm_nonneg (p.coeff i))
+    use p.natDegree
+    simp [hp]
+  have : (p.sum fun _ a ↦ ‖a‖) = rexp (circleAverage (fun _ ↦ log (p.sum fun _ a ↦ ‖a‖)) 0 1) := by
+    simp [circleAverage_def, mul_assoc, exp_log this]
+  rw [this]
+  simp only [not_false_eq_true, reduceIte, circleAverage_def]
+  gcongr
+  apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos)
+    (intervalIntegrable_mahlerMeasure p) (by simp)
+  simp only [EventuallyLE, eventually_iff_exists_mem]
+  use {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
+  constructor
+  · rw [mem_ae_iff]
+    simp only [compl, mem_setOf_eq, not_and, Decidable.not_not, measurableSet_Icc,
+      Measure.restrict_apply', Inter.inter, Set.inter]
+    apply Finite.measure_zero <| Finite.of_diff _ <| finite_singleton (2 * π)
+    have : {a | (a ∈ Icc 0 (2 * π) → eval (circleMap 0 1 a) p = 0) ∧ a ∈ Icc 0 (2 * π)} \ {2 * π}
+        = {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by
+      ext x
+      grind
+    rw [this]
+    apply Finite.of_finite_image (f := circleMap 0 1)
+    · apply (Multiset.finite_toSet (p.roots)).subset
+      simp [hp]
+    · exact fun _ h _ k l ↦ injOn_circleMap_of_abs_sub_le' (one_ne_zero) (by linarith) h.1 k.1 l
+  · intro x hx
+    gcongr
+    · simp only [mem_Icc, ne_eq, mem_setOf_eq, norm_pos_iff] at hx ⊢
+      exact hx.2
+    simp only [eval, eval₂, RingHom.id_apply]
+    apply norm_sum_le_of_le p.support
+    simp
+
+
+open Filter MeasureTheory Set in
+/-- The Mahler measure of a polynomial is bounded above by the sum of the norms of its coefficients.
+-/
+lemma mahlerMeasure_le_sum_norm_coeff' (p : ℂ[X]) : p.mahlerMeasure ≤
     ∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖ := by
   by_cases hp : p = 0; simp [hp]
-  simp only [mahlerMeasure, ne_eq, hp, not_false_eq_true, ↓reduceIte, logMahlerMeasure]
+  simp only [mahlerMeasure, ne_eq, hp, logMahlerMeasure]
   have : (circleAverage (fun x ↦ log ‖eval x p‖) 0 1) ≤
       (circleAverage (fun x ↦ log (∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖)) 0 1):= by
     simp only [circleAverage_def, mul_inv_rev, smul_eq_mul]
@@ -376,7 +421,7 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤
       rw [this]
       apply Finite.of_finite_image (f := circleMap 0 1)
       · apply (Multiset.finite_toSet (p.roots)).subset
-        simp_all
+        simp [hp]
       · exact fun _ h _ k l ↦ injOn_circleMap_of_abs_sub_le' (one_ne_zero) (by linarith) h.1 k.1 l
     · intro x hx
       gcongr
@@ -394,7 +439,7 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤
   have : 0 < ∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖ := by
     apply Finset.sum_pos' (fun (i : Fin (p.natDegree + 1)) _ ↦ norm_nonneg (p.coeff i))
     use ⟨p.natDegree, lt_add_one p.natDegree⟩
-    simp_all
+    simp [hp]
   calc
   rexp (circleAverage (fun x ↦ log ‖eval x p‖) 0 1) ≤
       rexp (circleAverage (fun x ↦ log (∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖)) 0 1) := by
@@ -439,53 +484,16 @@ theorem norm_coeff_le_binom_mahlerMeasure (n : ℕ) (p : ℂ[X]) :
       gcongr with a
       · exact le_max_left 1 ‖a‖
       · exact hx.1
-  _  ≤ ↑(p.natDegree.choose (p.natDegree - n)) * (Multiset.map (fun a ↦ 1 ⊔ ‖a‖) p.roots).prod := by
-
-    sorry
-
-
-open Multiset in
-theorem norm_coeff_le_binom_mahlerMeasure' (n : ℕ) (p : ℂ[X]) : ‖p.coeff n‖₊ ≤ (p.natDegree).choose (p.natDegree - n) * p.mahlerMeasure := by
-  by_cases hp : p = 0; simp [hp]
-  by_cases hn: p.natDegree < n; simp [coeff_eq_zero_of_natDegree_lt hn, le_of_lt hn, mahlerMeasure_nonneg]
-  rw [not_lt] at hn
-  rw [mahlerMeasure_eq_nnnorm, coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (IsAlgClosed.splits p)) hn]
-  norm_cast
-  rw [← mul_assoc, mul_comm _ ‖p.leadingCoeff‖₊, mul_assoc ‖p.leadingCoeff‖₊]
-  simp [nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one, one_pow, mul_one]
-  rw [mul_le_mul_left (by simp [leadingCoeff_ne_zero.mpr hp])]
-  simp only [esymm, Finset.sum_multiset_map_count, nsmul_eq_mul]
-  apply le_trans <| nnnorm_sum_le _ _
-  simp_rw [nnnorm_mul]
-  let S := (powersetCard (p.natDegree - n) p.roots)
-  calc
-  ∑ x ∈ S.toFinset, ‖(count x S : ℂ)‖₊ * ‖x.prod‖₊
-     ≤ ∑ x ∈ S.toFinset, ‖(count x S : ℂ)‖₊ * ((p.roots).map (fun a ↦ max 1 ‖a‖₊)).prod := by
-    gcongr with x hx
-    simp only [mem_toFinset, mem_powersetCard, S] at hx
-    rw [Finset.prod_multiset_map_count, Finset.prod_multiset_count]
-    simp only [nnnorm_prod, nnnorm_pow]
-    calc
-    ∏ x_1 ∈ x.toFinset, ‖x_1‖₊ ^ count x_1 x
-      ≤ ∏ x_1 ∈ x.toFinset, (1 ⊔ ‖x_1‖₊) ^ count x_1 x := by
-      gcongr with a
-      exact le_max_right 1 ‖a‖₊
-    _ ≤ ∏ m ∈ p.roots.toFinset, (1 ⊔ ‖m‖₊) ^ count m x := by
-      apply Finset.prod_le_prod_of_subset_of_one_le' (toFinset_subset.mpr (subset_of_le hx.1))
-      exact fun a _ _ ↦ one_le_pow₀ (le_max_left 1 ‖a‖₊)
-    _ ≤ ∏ m ∈ p.roots.toFinset, (1 ⊔ ‖m‖₊) ^ count m p.roots := by
-      gcongr with a
-      · exact le_max_left 1 ‖a‖₊
-      · exact hx.1
-  _  ≤ ↑(p.natDegree.choose (p.natDegree - n)) * (Multiset.map (fun a ↦ 1 ⊔ ‖a‖₊) p.roots).prod := by
-    simp only [Complex.norm_natCast, ← Finset.sum_mul]
-    gcongr
-    simp only [S]
+  _  = ↑(p.natDegree.choose (p.natDegree - n)) * (Multiset.map (fun a ↦ 1 ⊔ ‖a‖) p.roots).prod := by
+    rw [← Finset.sum_mul]
+    congr
     norm_cast
     simp only [mem_powersetCard, mem_toFinset, imp_self, implies_true, sum_count_eq_card,
       card_powersetCard, S]
-    apply le_of_eq
     congr
     exact splits_iff_card_roots.mp (IsAlgClosed.splits p)
+
+
+
 
 end Polynomial
