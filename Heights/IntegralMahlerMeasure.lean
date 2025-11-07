@@ -312,11 +312,11 @@ theorem mahlerMeasure_eq_leadingCoeff_mul_prod_roots (p : ℂ[X]) : p.mahlerMeas
   simp [logMahlerMeasure_eq_log_leadingCoeff_add_sum_log_roots] -/
 
 --try to get rid of this, used in norm_coeff_le_binom_mahlerMeasure
-theorem mahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.mahlerMeasure =
+/- theorem mahlerMeasure_eq_nnnorm (p : ℂ[X]) : p.mahlerMeasure =
     ‖p.leadingCoeff‖₊ * ((p.roots).map (fun a ↦ max 1 ‖a‖₊)).prod := by
   by_cases hp : p = 0; simp [hp]
   push_cast
-  simp [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
+  simp [mahlerMeasure_eq_leadingCoeff_mul_prod_roots] -/
 /-
 lemma one_le_prod_max_one_norm_roots (p : ℂ[X]) : 1 ≤ (p.roots.map (fun a ↦ max 1 ‖a‖)).prod := by
   grind [Multiset.one_le_prod, Multiset.mem_map]
@@ -365,7 +365,7 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum f
   simp only [not_false_eq_true, reduceIte, circleAverage_def]
   gcongr
   apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos)
-    (intervalIntegrable_mahlerMeasure p) (by simp)
+    p.intervalIntegrable_mahlerMeasure (by simp)
   simp only [EventuallyLE, eventually_iff_exists_mem]
   use {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
   constructor
@@ -375,7 +375,7 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum f
     apply Finite.measure_zero <| Finite.of_diff _ <| finite_singleton (2 * π)
     have : {a | (a ∈ Icc 0 (2 * π) → eval (circleMap 0 1 a) p = 0) ∧ a ∈ Icc 0 (2 * π)} \ {2 * π}
         = {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by
-      ext x
+      ext
       grind
     rw [this]
     apply Finite.of_finite_image (f := circleMap 0 1)
@@ -415,7 +415,7 @@ lemma mahlerMeasure_le_sum_norm_coeff' (p : ℂ[X]) : p.mahlerMeasure ≤
       apply Finite.measure_zero _
       have : {a | a ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} \ {2 * π} =
           {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by
-        ext x
+        ext
         grind
       apply Finite.of_diff _ <| finite_singleton (2 * π)
       rw [this]
