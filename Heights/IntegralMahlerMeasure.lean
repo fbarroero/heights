@@ -348,6 +348,9 @@ theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤
   rintro _ ⟨_, _, rfl⟩
   simp -/
 
+lemma a (p q : ℝ → Prop) : {a | p a ∧ q a} = {a | p a} ∩ {a | q a} := by
+  ext x
+  simp only [Set.mem_setOf_eq, Set.mem_inter_iff]
 
 open Filter MeasureTheory Set in
 /-- The Mahler measure of a polynomial is bounded above by the sum of the norms of its coefficients.
@@ -367,13 +370,13 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum f
   apply intervalIntegral.integral_mono_ae_restrict (le_of_lt two_pi_pos)
     p.intervalIntegrable_mahlerMeasure (by simp)
   simp only [EventuallyLE, eventually_iff_exists_mem]
-  use {x : ℝ | x ∈ Icc 0 (2 * π) ∧ eval (circleMap 0 1 x) p ≠ 0}
+  use {x : ℝ | eval (circleMap 0 1 x) p ≠ 0}
   constructor
   · rw [mem_ae_iff]
-    simp only [compl, mem_setOf_eq, not_and, Decidable.not_not, measurableSet_Icc,
+    simp only [compl, mem_setOf_eq, Decidable.not_not, measurableSet_Icc,
       Measure.restrict_apply', Inter.inter, Set.inter]
     apply Finite.measure_zero <| Finite.of_diff _ <| finite_singleton (2 * π)
-    have : {a | (a ∈ Icc 0 (2 * π) → eval (circleMap 0 1 a) p = 0) ∧ a ∈ Icc 0 (2 * π)} \ {2 * π}
+    have : {a | eval (circleMap 0 1 a) p = 0 ∧ a ∈ Icc 0 (2 * π)} \ {2 * π}
         = {a | a ∈ Ico 0 (2 * π) ∧ eval (circleMap 0 1 a) p = 0} := by
       ext
       grind
@@ -384,8 +387,6 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum f
     · exact fun _ h _ k l ↦ injOn_circleMap_of_abs_sub_le' (one_ne_zero) (by linarith) h.1 k.1 l
   · intro x hx
     gcongr
-    · simp only [mem_Icc, ne_eq, mem_setOf_eq, norm_pos_iff] at hx ⊢
-      exact hx.2
     simp only [eval, eval₂, RingHom.id_apply]
     apply norm_sum_le_of_le p.support
     simp
