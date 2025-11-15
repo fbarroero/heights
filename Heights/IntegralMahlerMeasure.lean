@@ -347,10 +347,10 @@ theorem roots_le_mahlerMeasure_of_one_le_leading_coeff {p : ℂ[X]} (hlc : 1 ≤
   simp only [Multiset.mem_map]
   rintro _ ⟨_, _, rfl⟩
   simp -/
-
+/-
 lemma a (p q : ℝ → Prop) : {a | p a ∧ q a} = {a | p a} ∩ {a | q a} := by
   ext x
-  simp only [Set.mem_setOf_eq, Set.mem_inter_iff]
+  simp only [Set.mem_setOf_eq, Set.mem_inter_iff] -/
 
 open Filter MeasureTheory Set in
 /-- The Mahler measure of a polynomial is bounded above by the sum of the norms of its coefficients.

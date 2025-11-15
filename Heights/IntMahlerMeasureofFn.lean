@@ -15,12 +15,12 @@ open Int
 open Finset in
 theorem card_eq_of_natDegree_le_of_coeff_le {n : ℕ} (hn : 1 ≤ n) {B₁ B₂ : Fin n → ℝ}
     (h_B : ∀ i, ⌈B₁ i⌉ ≤ ⌊B₂ i⌋) :
-    Nat.card {p : ℤ[X] // p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i} =
+    Nat.card {p : ℤ[X] | p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i} =
     ∏ i : Fin n, (⌊B₂ i⌋ - ⌈B₁ i⌉ + 1)  := by
   let Bp := fun i ↦ ⌊B₂ i⌋
   let Bm := fun i ↦ ⌈B₁ i⌉
   let Box := Icc Bm Bp
-  let BoxPoly := {p : ℤ[X] // p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i}
+  let BoxPoly := {p : ℤ[X] | p.natDegree < n ∧ ∀ i, B₁ i ≤ p.coeff i ∧ p.coeff i ≤ B₂ i}
   let f : BoxPoly → Box := fun p => ⟨toFn n p , by
     simp only [mem_Icc, Box, Bm, Bp]
     refine ⟨fun i ↦ ceil_le.mpr (p.property.2 i).1, fun i ↦ le_floor.mpr (p.property.2 i).2⟩⟩
@@ -100,7 +100,7 @@ theorem bound {p : ℤ[X]} {n : ℕ} {B : NNReal} (h₀ : p ≠ 0) (h_deg : p.na
 
 open Int in
 theorem card1 {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
-    Nat.card {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} =
+    Nat.card {p : ℤ[X] | p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} =
     ∏ i : Fin n, (2 * ⌊n.choose i * B⌋₊ + 1) := by
   let B₁ := fun i : Fin n ↦ - (n.choose i * B  : ℝ)
   let B₂ := fun i : Fin n ↦ (n.choose i * B : ℝ)
@@ -117,8 +117,8 @@ theorem card1 {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
 
 open Int in
 def funct (n : ℕ) (B : NNReal) :
-    {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).mahlerMeasure ≤ B} →
-    {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} := by
+    {p : ℤ[X] | p.natDegree < n ∧ (p.map (castRingHom ℂ)).mahlerMeasure ≤ B} →
+    {p : ℤ[X] | p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤ (n.choose i * B : ℝ)} := by
   apply Subtype.map id
   intro p hp
   obtain ⟨h_deg, _⟩ := hp
@@ -145,13 +145,13 @@ def funct (n : ℕ) (B : NNReal) :
       apply Nat.choose_le_choose i <| le_of_lt h_deg
 
 theorem Northcott {n : ℕ} (hn : 1 ≤ n) (B : NNReal) :
-    Nat.card {p : ℤ[X] // p.natDegree < n ∧ (p.map (castRingHom ℂ)).mahlerMeasure ≤ B} ≤
+    Nat.card {p : ℤ[X] | p.natDegree < n ∧ (p.map (castRingHom ℂ)).mahlerMeasure ≤ B} ≤
     ∏ i : Fin n, (2 * Nat.floor (Nat.choose n i * B) + 1) := by
   have h1 := card1 hn B
   have h2 : ∏ i : Fin n, (2 * ⌊n.choose i * B⌋₊ + 1) ≠ 0 := by
     rw [Finset.prod_ne_zero_iff]
     omega
-  have : Finite {p : ℤ[X] // p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤
+  have : Finite {p : ℤ[X] | p.natDegree < n ∧ ∀ i : Fin n, |p.coeff i| ≤
     (n.choose i * B : ℝ)} := by
       apply Nat.finite_of_card_ne_zero _
       rw [h1]
