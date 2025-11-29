@@ -4,44 +4,45 @@ namespace Polynomial
 
 open Int
 
+/-- The least common multiple of the denominators of the coefficients of a polynomial over `ℚ`. -/
 def lcmDen (p : ℚ[X]) : ℕ := p.support.lcm fun i ↦ (p.coeff i).den
 
---Useless?
-theorem lcmDen_poly_int (p : ℤ[X]) : lcmDen (p.map (castRingHom ℚ)) = 1 := by
-  simp [lcmDen, coeff_map, eq_intCast, Rat.intCast_den]
-  apply dvd_antisymm_of_normalize_eq Finset.normalize_lcm rfl _
-    <| one_dvd ((map (castRingHom ℚ) p).support.lcm fun i ↦ 1)
-  apply Finset.lcm_dvd
-  exact fun b a ↦ one_dvd 1
+open Finset in
+/-- The least common multiple of the denominators of the coefficients of a polynomial over `ℤ` is 1.
+-/
+theorem lcmDen_poly_int (p : ℤ[X]) : (p.map (castRingHom ℚ)).lcmDen = 1 := by
+  simp only [lcmDen, coeff_map, eq_intCast, Rat.den_intCast]
+  apply dvd_antisymm_of_normalize_eq normalize_lcm rfl _ <| one_dvd _
+  exact lcm_dvd <| fun b a ↦ one_dvd 1
 
 theorem den_coeff_dvd_lcmDen (p : ℚ[X]) (i : ℕ) : (p.coeff i).den ∣ p.lcmDen := by
   by_cases h : i ∈ p.support
   · exact Finset.dvd_lcm h
   · simp [notMem_support_iff.mp h]
 
-def erase_den (p : ℚ[X]) : ℤ[X] :=
+def eraseDen (p : ℚ[X]) : ℤ[X] :=
   ofFn (p.natDegree + 1) (fun i ↦ (p.lcmDen) / (p.coeff i).den * (p.coeff i).num)
 
-theorem erase_denom_eq_sum_monomial (p : ℚ[X]) : p.erase_den =
+theorem eraseDen_eq_sum_monomial (p : ℚ[X]) : p.eraseDen =
     ∑ i : Fin (p.natDegree + 1), monomial i ((lcmDen p) / (p.coeff i).den * (p.coeff i).num) := by
-  simp [erase_den, ofFn_eq_sum_monomial]
+  simp [eraseDen, ofFn_eq_sum_monomial]
 
-theorem erase_denom_coeff (p : ℚ[X]) :
-    p.erase_den.coeff = fun i ↦ (p.lcmDen) / (p.coeff i).den * (p.coeff i).num := by
+theorem eraseDen_coeff (p : ℚ[X]) :
+    p.eraseDen.coeff = fun i ↦ (p.lcmDen) / (p.coeff i).den * (p.coeff i).num := by
   ext i
   by_cases h : i ≤ p.natDegree
-  · rw [erase_den, ofFn_coeff_eq_val_of_lt _ <| Order.lt_add_one_iff.mpr h]
+  · rw [eraseDen, ofFn_coeff_eq_val_of_lt _ <| Order.lt_add_one_iff.mpr h]
   · rw [not_le] at h
-    simp only [erase_den, ofFn_coeff_eq_zero_of_ge _ h, zero_eq_mul, Rat.num_eq_zero]
+    simp only [eraseDen, ofFn_coeff_eq_zero_of_ge _ h, zero_eq_mul, Rat.num_eq_zero]
     right
     exact coeff_eq_zero_of_natDegree_lt h
 
-theorem erase_denom_support (p : ℚ[X]) : p.erase_den.support = p.support := by
+theorem eraseDen_support (p : ℚ[X]) : p.eraseDen.support = p.support := by
   ext i
   simp only [mem_support_iff]
   rw [not_iff_not]
   by_cases h : i ≤ p.natDegree
-  · rw [p.erase_denom_coeff]
+  · rw [p.eraseDen_coeff]
     refine ⟨?_, fun h ↦ by simp [h] ⟩
     contrapose!
     intro h
@@ -51,18 +52,18 @@ theorem erase_denom_support (p : ℚ[X]) : p.erase_den.support = p.support := by
     refine ⟨?_, (p.coeff i).den_nz⟩
     simp [Finset.lcm_eq_zero_iff]
   · rw [not_le] at h
-    simpa [erase_den, ofFn_coeff_eq_zero_of_ge _ h] using coeff_eq_zero_of_natDegree_lt h
+    simpa [eraseDen, ofFn_coeff_eq_zero_of_ge _ h] using coeff_eq_zero_of_natDegree_lt h
 
 
 
-theorem erase_denom_natDegree_eq (p : ℚ[X]) : p.erase_den.natDegree = p.natDegree := by
+theorem eraseDen_natDegree_eq (p : ℚ[X]) : p.eraseDen.natDegree = p.natDegree := by
   apply natDegree_eq_natDegree
-  simp [degree, erase_denom_support]
+  simp [degree, eraseDen_support]
 
-theorem erase_denom_leadingCoeff_of_monic {p : ℚ[X]} (hp : p.Monic) :
-    p.erase_den.leadingCoeff = p.lcmDen := by
+theorem eraseDen_leadingCoeff_of_monic {p : ℚ[X]} (hp : p.Monic) :
+    p.eraseDen.leadingCoeff = p.lcmDen := by
   rw [leadingCoeff]
-  simp [erase_denom_coeff, erase_denom_natDegree_eq,
+  simp [eraseDen_coeff, eraseDen_natDegree_eq,
     coeff_natDegree, hp, lcmDen]
 
 
@@ -72,7 +73,7 @@ theorem erase_denom_leadingCoeff_of_monic {p : ℚ[X]} (hp : p.Monic) :
 
   --apply Finset.induction_on
 
-theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_den.IsPrimitive := by
+theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.eraseDen.IsPrimitive := by
   rw [isPrimitive_iff_isUnit_of_C_dvd]
   by_contra! h
   simp only [C_dvd_iff_dvd_coeff] at h
@@ -81,18 +82,18 @@ theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.erase_den.IsPrimitive := by
   have hPPrime : P.Prime := by
     apply Nat.minFac_prime
     rwa [ne_eq, ← isUnit_iff_natAbs_eq]
-  have hPdvd1 (i : ℕ) : P ∣ (p.erase_den.coeff i).natAbs := by
+  have hPdvd1 (i : ℕ) : P ∣ (p.eraseDen.coeff i).natAbs := by
     zify
     simp only [dvd_abs]
     apply dvd_trans _ <| natAbs_dvd.mpr <| hr1 i
     simpa [natCast_dvd, P] using r.natAbs.minFac_dvd
   have hPdvd2 : P ∣ p.lcmDen := by
-    have := erase_denom_leadingCoeff_of_monic hp
-    rw [leadingCoeff, erase_denom_natDegree_eq] at this
+    have := eraseDen_leadingCoeff_of_monic hp
+    rw [leadingCoeff, eraseDen_natDegree_eq] at this
     zify
     rw [← this]
     exact ofNat_dvd_left.mpr <| hPdvd1 p.natDegree
-  simp only [erase_denom_coeff, natAbs_mul] at hPdvd1
+  simp only [eraseDen_coeff, natAbs_mul] at hPdvd1
   norm_cast at hPdvd1
   conv at hPdvd1 => ext i; norm_cast; rw [Nat.Prime.dvd_mul hPPrime]
   have hPdvdden_of (i : ℕ): ¬(P ∣ p.lcmDen / (p.coeff i).den) → P ∣ (p.coeff i).num.natAbs := by
@@ -137,15 +138,15 @@ variable {K : Type*} [Field K] [Algebra ℚ K] (x : K) (hx : IsIntegral ℚ x)
 
 open Polynomial
 
-noncomputable def intMinpoly : ℤ[X] := erase_den (minpoly ℚ x)
+noncomputable def intMinpoly : ℤ[X] := eraseDen (minpoly ℚ x)
 
 variable [NumberField K]
 
 --need to prove height is gal invariant
-theorem equal {x : K} (hpol : ((intMinpoly x).map (algebraMap ℤ K)).Splits (RingHom.id K)) :
+theorem equal {x : K} (hpol : ((intMinpoly x).map (algebraMap ℤ K)).Splits /- (RingHom.id K) -/) :
     (intMinpoly x).leadingCoeff =  ∏ᶠ w : FinitePlace K, max 1 (w x) := by
-  have h_poleq := eq_prod_roots_of_splits_id hpol
-  simp only [algebraMap_int_eq] at h_poleq
+  --have h_poleq := eq_prod_roots_of_splits_id hpol
+  --simp only [algebraMap_int_eq] at h_poleq
   have h (w : FinitePlace K) : w (intMinpoly x).leadingCoeff *
     (((intMinpoly x).map (algebraMap ℤ K)).roots.map (fun a ↦ max 1 (w a))).prod = 1 := by
     sorry

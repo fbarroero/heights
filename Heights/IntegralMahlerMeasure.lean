@@ -126,7 +126,7 @@ theorem mahlerMeasure_mul (p q : ℂ[X]) : (p * q).mahlerMeasure =
     simp_all
   · exact Set.InjOn.mono (fun _ hx ↦ hx.1) (injOn_circleMap_of_abs_sub_le (zero_ne_one' ℝ).symm (by simp [le_of_eq, pi_nonneg]))
  -/
-
+/-
 --In mathlib
 theorem mahlerMeasure_pos_of_ne_zero0 {p : ℂ[X]} (hp : p ≠ 0) : 0 < p.mahlerMeasure := by
   grind [exp_pos, mahlerMeasure_def_of_ne_zero]
@@ -144,17 +144,17 @@ theorem logMahlerMeasure_mul_eq_add_logMahelerMeasure0 {p q : ℂ[X]} (hpq : p *
   simp_all [logMahlerMeasure_eq_log_MahlerMeasure, mahlerMeasure_mul, log_mul]
 
 --In mathlib
-theorem posLog_eq_log_max_one {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
+theorem posLog_eq_log_max_one0 {x : ℝ} (hx : 0 ≤ x) : log⁺ x = log (max 1 x) := by
   grind [le_abs, posLog_eq_log, log_one, max_eq_left, log_nonpos, posLog_def]
 
-theorem logMahlerMeasure_C_mul {a : ℂ} (ha : a ≠ 0) {p : ℂ[X]} (hp : p ≠ 0) :
+theorem logMahlerMeasure_C_mul0 {a : ℂ} (ha : a ≠ 0) {p : ℂ[X]} (hp : p ≠ 0) :
     (C a * p).logMahlerMeasure = log ‖a‖ + p.logMahlerMeasure := by
-  rw [logMahlerMeasure_mul_eq_add_logMahelerMeasure (by simp [ha, hp]), logMahlerMeasure_const]
+  rw [logMahlerMeasure_mul_eq_add_logMahelerMeasure0 (by simp [ha, hp]), logMahlerMeasure_const]
 
 open MeromorphicOn Metric in
 /-- The logarithmic Mahler measure of `X - C z` is `log⁺` of the absolute value of `z`. -/
 @[simp]
-theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺ ‖z‖ := by
+theorem logMahlerMeasure_X_sub_C0 (z : ℂ) : (X - C z).logMahlerMeasure = log⁺ ‖z‖ := by
   by_cases hz₀ : z = 0
   · simp [hz₀, posLog_def]
   have hmeroOn (U : Set ℂ) : MeromorphicOn (fun x ↦ x - z) U :=
@@ -229,10 +229,10 @@ theorem logMahlerMeasure_X_sub_C (z : ℂ) : (X - C z).logMahlerMeasure = log⁺
     simp [this, posLog_eq_log_max_one <| norm_nonneg z, h1lez]
 
 @[simp]
-theorem logMahlerMeasure_X_add_C (z : ℂ) : (X + C z).logMahlerMeasure = log⁺ ‖z‖ := by
+theorem logMahlerMeasure_X_add_C0 (z : ℂ) : (X + C z).logMahlerMeasure = log⁺ ‖z‖ := by
   simp [← sub_neg_eq_add, ← map_neg]
 
-theorem logMahlerMeasure_C_mul_X_add_C {a : ℂ} (b : ℂ) (ha : a ≠ 0) :
+theorem logMahlerMeasure_C_mul_X_add_C0 {a : ℂ} (b : ℂ) (ha : a ≠ 0) :
     (C a * X + C b).logMahlerMeasure = log ‖a‖ + log⁺ ‖a⁻¹ * b‖ := by
   rw [show C a * X + C b = C a * (X + C (a⁻¹ * b)) by simp [mul_add, ← map_mul, ha],
     logMahlerMeasure_C_mul ha (X_add_C_ne_zero (a⁻¹ * b)), logMahlerMeasure_X_add_C]
@@ -240,11 +240,11 @@ theorem logMahlerMeasure_C_mul_X_add_C {a : ℂ} (b : ℂ) (ha : a ≠ 0) :
 theorem logMahlerMeasure_degree_eq_one {p : ℂ[X]} (h : p.degree = 1) : p.logMahlerMeasure =
     log ‖p.coeff 1‖ + log⁺ ‖(p.coeff 1)⁻¹ * p.coeff 0‖ := by
   rw [eq_X_add_C_of_degree_le_one (le_of_eq h)]
-  simp [logMahlerMeasure_C_mul_X_add_C _ (show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h)]
+  simp [logMahlerMeasure_C_mul_X_add_C0 _ (show p.coeff 1 ≠ 0 by exact coeff_ne_zero_of_eq_degree h)]
 
 /-- The Mahler measure of `X - C z` equals `max 1 ‖z‖`. -/
 @[simp]
-theorem mahlerMeasure_X_sub_C (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z‖ := by
+theorem mahlerMeasure_X_sub_C0 (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z‖ := by
   have := logMahlerMeasure_X_sub_C z
   rw [logMahlerMeasure_eq_log_MahlerMeasure] at this
   apply_fun exp at this
@@ -253,7 +253,7 @@ theorem mahlerMeasure_X_sub_C (z : ℂ) : (X - C z).mahlerMeasure = max 1 ‖z�
     exp_log (lt_of_lt_of_le zero_lt_one <| le_max_left 1 ‖z‖)] at this
 
 @[simp]
-theorem mahlerMeasure_X_add_C (z : ℂ) : (X + C z).mahlerMeasure = max 1 ‖z‖ := by
+theorem mahlerMeasure_X_add_C0 (z : ℂ) : (X + C z).mahlerMeasure = max 1 ‖z‖ := by
   simp [← sub_neg_eq_add, ← map_neg]
 
 theorem mahlerMeasure_C_mul_X_add_C {a : ℂ} (b : ℂ) (ha : a ≠ 0) :
@@ -303,7 +303,7 @@ theorem mahlerMeasure_eq_leadingCoeff_mul_prod_roots (p : ℂ[X]) : p.mahlerMeas
   rw [exp_add, exp_log <| mahlerMeasure_pos_of_ne_zero0 hp,
     exp_log <|norm_pos_iff.mpr <| leadingCoeff_ne_zero.mpr hp] at this
   simp [this, exp_multiset_sum, posLog_eq_log_max_one, exp_log]
-
+ -/
 ----------
 
 
