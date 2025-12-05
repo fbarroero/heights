@@ -355,7 +355,7 @@ lemma a (p q : ℝ → Prop) : {a | p a ∧ q a} = {a | p a} ∩ {a | q a} := by
 open Filter MeasureTheory Set in
 /-- The Mahler measure of a polynomial is bounded above by the sum of the norms of its coefficients.
 -/
-lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum fun _ a ↦ ‖a‖ := by
+lemma mahlerMeasure_le_sum_norm_coeff' (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum fun _ a ↦ ‖a‖ := by
   by_cases hp : p = 0; simp [hp]
   simp only [mahlerMeasure, ne_eq, hp, logMahlerMeasure]
   have : 0 < p.sum fun x a ↦ ‖a‖ := by
@@ -395,7 +395,7 @@ lemma mahlerMeasure_le_sum_norm_coeff (p : ℂ[X]) : p.mahlerMeasure ≤ p.sum f
 open Filter MeasureTheory Set in
 /-- The Mahler measure of a polynomial is bounded above by the sum of the norms of its coefficients.
 -/
-lemma mahlerMeasure_le_sum_norm_coeff' (p : ℂ[X]) : p.mahlerMeasure ≤
+lemma mahlerMeasure_le_sum_norm_coeff'' (p : ℂ[X]) : p.mahlerMeasure ≤
     ∑ i : Fin (p.natDegree + 1), ‖p.coeff i‖ := by
   by_cases hp : p = 0; simp [hp]
   simp only [mahlerMeasure, ne_eq, hp, logMahlerMeasure]
