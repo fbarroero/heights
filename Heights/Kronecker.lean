@@ -74,21 +74,36 @@ lemma finite_of_finite_image_finite_fibers
 
 end card
 
+variable {x : Kˣ}
 
-theorem dd {x : Kˣ} (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
+local notation3 "d" => (minpoly ℚ (x : K)).natDegree
+
+local notation3 "BoxPoly" =>
+  {p : ℤ[X] | p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
+
+open Nat in
+lemma bpcard : Set.Finite BoxPoly := by
+  have : Set.ncard BoxPoly ≤
+      ∏ i : Fin (d + 1), (2 * ⌊choose d i⌋₊ + 1) := by
+    have := Polynomial.card_mahlerMeasure_le_prod d 1
+    simp_all
+
+  sorry
+
+theorem dd (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
     Finite ↥(Subgroup.closure {x}) := by
   have (n : ℕ) : ((minpoly ℚ ((x : K) ^ n)).map (algebraMap ℚ ℂ)).mahlerMeasure = 1 := by
     refine aa ?_
     exact fun v ↦ bb h n v
   let f : (Subgroup.closure {x}).carrier → ℚ[X] := fun y ↦ minpoly ℚ ((y : Kˣ): K)
-
+  --let s :=
   have : (Subgroup.closure {x}).carrier.Finite := by
 
     sorry
   --apply finite_of_finite_image_finite_fibers
   exact this
 
-theorem cc {x : Kˣ} (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
+theorem cc (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
     ∃ k, 0 < k ∧ x ∈ rootsOfUnity k K := by
   simp_rw [mem_rootsOfUnity]
   let S : Subgroup Kˣ := Subgroup.closure {x}
@@ -110,7 +125,7 @@ theorem cc {x : Kˣ} (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral �
     rw [Nat.sub_add_eq_max]
     rw [max_eq_left <| le_of_lt hne]
   simp only [Subtype.mk.injEq, f] at hxm
-  simp [f, this, hxm, hne]
+  simp [this, hxm, hne]
  /-
 
   let f := fun v : InfinitePlace K => v x
