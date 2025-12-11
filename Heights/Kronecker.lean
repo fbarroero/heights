@@ -42,9 +42,30 @@ theorem aa {x : K} (h : ∀ v : InfinitePlace K, v x ≤ 1) :
   intro _ z hx rfl
   exact hm1 z hx
 
---lemma (α β : Type*) (f :α → β)
 
-
+theorem oho {x : K} (h_int : IsIntegral ℤ x) (h : ∀ v : InfinitePlace K, v x ≤ 1) :
+    ((minpoly ℤ x).map (algebraMap ℤ ℂ)).mahlerMeasure = 1 := by
+  have h1 : (minpoly ℤ x).leadingCoeff = 1 := Monic.leadingCoeff <| minpoly.monic h_int
+  have h1' : Monic (map (algebraMap ℤ ℂ) (minpoly ℤ x)) := Monic.map (algebraMap ℤ ℂ) h1
+  have : (map (Int.castRingHom ℂ) (minpoly ℤ x)).leadingCoeff = 1 := h1'
+  simp only [algebraMap_int_eq, mahlerMeasure_eq_leadingCoeff_mul_prod_roots, this, one_mem,
+    CStarRing.norm_of_mem_unitary, one_mul]
+  apply Multiset.prod_eq_one
+  simp only [Multiset.mem_map, forall_exists_index, and_imp]
+  intro _ z hx rfl
+  have hb : z ∈ (Set.range fun (φ : K →+* ℂ) => φ x) := by
+    have := NumberField.Embeddings.range_eval_eq_rootSet_minpoly K ℂ x
+    rw [this, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_int, rootSet]
+    refine Multiset.mem_toFinset.mpr ?_
+    rw [aroots]
+    rw [map_map]
+    aesop
+  have ha : ∃ v : InfinitePlace K, v x = ‖z‖ := by
+    obtain ⟨φ, rfl⟩ := hb
+    use InfinitePlace.mk φ
+    simp
+  obtain ⟨v, hv⟩ := ha
+  grind
 section card
 
 open Set
