@@ -102,16 +102,30 @@ local notation3 "d" => (minpoly ℤ (x : K)).natDegree
 local notation3 "BoxPoly" =>
   {p : ℤ[X] | p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
 
-open Nat in
-lemma bpcard : Set.Finite BoxPoly := by
-  have hfin := finite_mahlerMeasure_le d 1
-  grind
+local notation3 "BoxPoly0" =>
+  {p : ℤ[X] | p ≠ 0 ∧ p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
 
-theorem deg (y : Submonoid.closure {x}) : (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
+lemma subs : BoxPoly0 ⊆ BoxPoly := by grind
+
+open Nat in
+lemma bpcard : Set.Finite BoxPoly0 := by
+  have hfin := finite_mahlerMeasure_le d 1
+  have : BoxPoly0 ⊆ BoxPoly := by
+    gcongr 1
+    grind
+  apply Set.Finite.subset hfin this
+
+/- theorem deg (y : Submonoid.closure {x}) : (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
   obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp y.prop
   rw [← h]
   simp
-  sorry
+  sorry -/
+
+lemma inte (x : K ) (_ : IsIntegral ℤ x) : IsIntegral ℚ x := by
+  exact Algebra.IsIntegral.isIntegral x
+
+lemma mem_adj (x : K) : x ∈ IntermediateField.adjoin ℚ {x} := by
+  rw [← IntermediateField.adjoin_simple_le_iff]
 
 theorem deg' (h_int : IsIntegral ℤ (x : K)) (y : Kˣ) (hy : y ∈ (Submonoid.closure {x}).carrier) :
     (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
@@ -134,11 +148,15 @@ theorem deg' (h_int : IsIntegral ℤ (x : K)) (y : Kˣ) (hy : y ∈ (Submonoid.c
     norm_cast
     rw [leadingCoeff_eq_zero]
     exact minpoly.ne_zero h_int
-  · rw [← IntermediateField.adjoin.finrank, ← IntermediateField.adjoin.finrank]
-    sorry
+  · rw [← IntermediateField.adjoin.finrank <| inte ((x : K) ^ n) h_intn,
+      ← IntermediateField.adjoin.finrank <| inte (x : K) h_int]
+    apply IntermediateField.finrank_le_of_le_right
+    rw [IntermediateField.adjoin_le_iff]
+    rw [@Set.singleton_subset_iff]
+    rw [@SetLike.mem_coe]
+    refine pow_mem ?_ n
+    exact mem_adj (x : K)
 
-    sorry
-    sorry
     /- rw [← IntermediateField.adjoin.finrank]
     ·
       sorry
@@ -152,21 +170,50 @@ theorem dd (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)
     exact IsIntegral.pow hx n
     exact fun v ↦ bb h n v
   let f : Kˣ → ℤ[X] := fun y ↦ minpoly ℤ (y : K)
-  let F : (Submonoid.closure {x}).carrier → BoxPoly := fun y ↦ ⟨minpoly ℤ ((y : Kˣ): K), by
+  /- let F : (Submonoid.closure {x}).carrier → BoxPoly := fun y ↦ ⟨minpoly ℤ ((y : Kˣ): K), by
     simp
     refine ⟨deg y, ?_⟩
     obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp y.prop
     rw [← h]
-    exact le_of_eq (this n)⟩
+    exact le_of_eq (this n)⟩-/
   have : (Submonoid.closure {x}).carrier.Finite := by
-    apply finite_of_finite_image_finite_fibers (T:= BoxPoly) f _ bpcard
-    ·
-      sorry
+    apply finite_of_finite_image_finite_fibers (T:= BoxPoly0) f _ bpcard
+    · intro p hp
+      refine Set.Finite.inter_of_right ?_ (Submonoid.closure {x}).carrier
+      have hs (z : Kˣ) (hz : f z = p ) : (z : K) ∈ p.aroots K := by
+        simp only [mem_roots', algebraMap_int_eq, IsRoot.def]
+        constructor
+        · refine (Polynomial.map_ne_zero_iff ?_).mpr ?_
+          exact RingHom.injective_int (Int.castRingHom K)
+          exact hp.1
+        · rw [← hz]
+          have := minpoly.aeval ℤ (z : K)
+          rw [aeval_def, eval₂_eq_eval_map] at this
+          simp_all
+          grind
+      let s : Set Kˣ := {y | (y : K) ∈ p.aroots K}
+      have fin : s.Finite := by
+        let f : Kˣ → K := fun y ↦ (y : K)
+        let t := {a : K | a ∈ p.aroots K}
+        have : f '' s ⊆ t:= by aesop
+        have htf : t.Finite := by
+          exact Multiset.finite_toSet (p.aroots K)
+        have : f.Injective := by
+          exact Units.val_injective
+        rw [← @Set.encard_lt_top_iff] at htf ⊢
+        apply lt_of_le_of_lt _ htf
+        apply Set.encard_le_encard_of_injOn (f:=f)
+        exact fun ⦃x⦄ a ↦ a
+        exact fun ⦃x₁⦄ a ⦃x₂⦄ a_1 ↦ by exact fun a ↦ this a
+      exact Set.Finite.subset fin hs
     · intro y hy
-      refine ⟨deg' hx y hy, ?_⟩
       obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp hy
-      rw [← h]
-      exact le_of_eq (this n)
+      refine ⟨?_, deg' hx y hy, ?_⟩
+      · refine minpoly.ne_zero ?_
+        rw [← h]
+        exact IsIntegral.pow hx n
+      · rw [← h]
+        exact le_of_eq (this n)
   --apply finite_of_finite_image_finite_fibers
   exact this
 
