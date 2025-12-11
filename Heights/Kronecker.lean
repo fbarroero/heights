@@ -1,5 +1,5 @@
-import Heights.IntMahlerMeasureofFn
-import Heights.IntMinPoly
+--import Heights.IntMinPoly
+import Mathlib
 
 namespace Polynomial
 
@@ -15,7 +15,7 @@ theorem bb {x : K} (h : ∀ v : InfinitePlace K, v x ≤ 1) (n : ℕ) (v : Infin
   exact apply_nonneg v x
 
 variable [NumberField K]
-
+/-
 theorem aa {x : K} (h : ∀ v : InfinitePlace K, v x ≤ 1) :
     ((minpoly ℚ x).map (algebraMap ℚ ℂ)).mahlerMeasure = 1 := by
   rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
@@ -40,7 +40,7 @@ theorem aa {x : K} (h : ∀ v : InfinitePlace K, v x ≤ 1) :
   apply Multiset.prod_eq_one
   simp only [Multiset.mem_map, forall_exists_index, and_imp]
   intro _ z hx rfl
-  exact hm1 z hx
+  exact hm1 z hx -/
 
 
 theorem oho {x : K} (h_int : IsIntegral ℤ x) (h : ∀ v : InfinitePlace K, v x ≤ 1) :
@@ -97,39 +97,85 @@ end card
 
 variable {x : Kˣ}
 
-local notation3 "d" => (minpoly ℚ (x : K)).natDegree
+local notation3 "d" => (minpoly ℤ (x : K)).natDegree
 
 local notation3 "BoxPoly" =>
   {p : ℤ[X] | p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
 
 open Nat in
 lemma bpcard : Set.Finite BoxPoly := by
-  have : Set.ncard BoxPoly ≤
-      ∏ i : Fin (d + 1), (2 * ⌊choose d i⌋₊ + 1) := by
-    have := Polynomial.card_mahlerMeasure_le_prod d 1
-    simp_all
+  have hfin := finite_mahlerMeasure_le d 1
+  grind
 
+theorem deg (y : Submonoid.closure {x}) : (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
+  obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp y.prop
+  rw [← h]
+  simp
   sorry
 
-theorem dd (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
-    Finite ↥(Subgroup.closure {x}) := by
-  have (n : ℕ) : ((minpoly ℚ ((x : K) ^ n)).map (algebraMap ℚ ℂ)).mahlerMeasure = 1 := by
-    refine aa ?_
-    exact fun v ↦ bb h n v
-  let f : (Subgroup.closure {x}).carrier → ℚ[X] := fun y ↦ minpoly ℚ ((y : Kˣ): K)
-  --let s :=
-  have : (Subgroup.closure {x}).carrier.Finite := by
+theorem deg' (h_int : IsIntegral ℤ (x : K)) (y : Kˣ) (hy : y ∈ (Submonoid.closure {x}).carrier) :
+    (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
+  obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp hy
+  rw [← h]
+  simp
+  have h_intn : IsIntegral ℤ ((x : K) ^ n) := IsIntegral.pow h_int n
+  convert_to (minpoly ℚ ((x : K) ^ n)).natDegree ≤ (minpoly ℚ (x : K)).natDegree
+  · rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_intn]
+    refine Eq.symm (natDegree_map_of_leadingCoeff_ne_zero (algebraMap ℤ ℚ) ?_)
+    rw [@Algebra.algebraMap_eq_smul_one]
+    rw [@Int.smul_one_eq_cast]
+    norm_cast
+    rw [leadingCoeff_eq_zero]
+    exact minpoly.ne_zero h_intn
+  · rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_int]
+    refine Eq.symm (natDegree_map_of_leadingCoeff_ne_zero (algebraMap ℤ ℚ) ?_)
+    rw [@Algebra.algebraMap_eq_smul_one]
+    rw [@Int.smul_one_eq_cast]
+    norm_cast
+    rw [leadingCoeff_eq_zero]
+    exact minpoly.ne_zero h_int
+  · rw [← IntermediateField.adjoin.finrank, ← IntermediateField.adjoin.finrank]
+    sorry
 
     sorry
+    sorry
+    /- rw [← IntermediateField.adjoin.finrank]
+    ·
+      sorry
+    ·
+      sorry -/
+
+theorem dd (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
+    Finite (Submonoid.closure {x}) := by
+  have (n : ℕ) : ((minpoly ℤ ((x : K) ^ n)).map (algebraMap ℤ ℂ)).mahlerMeasure = 1 := by
+    apply oho
+    exact IsIntegral.pow hx n
+    exact fun v ↦ bb h n v
+  let f : Kˣ → ℤ[X] := fun y ↦ minpoly ℤ (y : K)
+  let F : (Submonoid.closure {x}).carrier → BoxPoly := fun y ↦ ⟨minpoly ℤ ((y : Kˣ): K), by
+    simp
+    refine ⟨deg y, ?_⟩
+    obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp y.prop
+    rw [← h]
+    exact le_of_eq (this n)⟩
+  have : (Submonoid.closure {x}).carrier.Finite := by
+    apply finite_of_finite_image_finite_fibers (T:= BoxPoly) f _ bpcard
+    ·
+      sorry
+    · intro y hy
+      refine ⟨deg' hx y hy, ?_⟩
+      obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp hy
+      rw [← h]
+      exact le_of_eq (this n)
   --apply finite_of_finite_image_finite_fibers
   exact this
 
 theorem cc (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
     ∃ k, 0 < k ∧ x ∈ rootsOfUnity k K := by
   simp_rw [mem_rootsOfUnity]
-  let S : Subgroup Kˣ := Subgroup.closure {x}
+  let S : Submonoid Kˣ := Submonoid.closure {x}
   let f : ℕ → S := fun n ↦ ⟨x ^ n, by
-      rw [Subgroup.mem_closure_singleton]
+      rw [Submonoid.mem_closure_singleton]
       exact ⟨n, rfl⟩⟩
   --let S := {y : K | ∃ n, y = x ^ n}
   have := dd h hx
