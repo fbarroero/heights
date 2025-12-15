@@ -7,225 +7,112 @@ variable {p : ℤ[X]} {K : Type*} [Field K]
 
 open NumberField
 
-theorem bb {x : K} (h : ∀ v : InfinitePlace K, v x ≤ 1) (n : ℕ) (v : InfinitePlace K) :
-    v (x ^ n) ≤ 1 := by
-  specialize h v
-  simp
-  refine pow_le_one₀ ?_ h
-  exact apply_nonneg v x
+theorem _root_.InfinitePlace.pow_le_one_of_le_one {x : K} {v : InfinitePlace K}
+    (h : v x ≤ 1) (n : ℕ) : v (x ^ n) ≤ 1 := by
+  rw [map_pow]
+  exact pow_le_one₀ (apply_nonneg v x) h
 
 variable [NumberField K]
-/-
-theorem aa {x : K} (h : ∀ v : InfinitePlace K, v x ≤ 1) :
-    ((minpoly ℚ x).map (algebraMap ℚ ℂ)).mahlerMeasure = 1 := by
-  rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots]
-  have h1 : (minpoly ℚ x).leadingCoeff = 1 :=
-    Monic.leadingCoeff <| minpoly.monic <| Algebra.IsIntegral.isIntegral x
-  have hb (z : ℂ) (hz : z ∈ (minpoly ℚ x).aroots ℂ) : z ∈ (Set.range fun (φ : K →+* ℂ) => φ x) := by
-    have := NumberField.Embeddings.range_eval_eq_rootSet_minpoly K ℂ x
-    rw [rootSet] at this
-    aesop
-  have ha (z : ℂ) (hz : z ∈ (minpoly ℚ x).aroots ℂ) : ∃ v : InfinitePlace K, v x = ‖z‖ := by
-    specialize hb z hz
-    obtain ⟨φ, rfl⟩ := hb
-    use InfinitePlace.mk φ
-    simp
-  have hm1 : ∀ z ∈ (minpoly ℚ x).aroots ℂ, max 1 ‖z‖ = 1 := by
-    intro z hz
-    obtain ⟨v, hv⟩ := ha z hz
-    specialize h v
-    rw [hv] at h
-    simp [h]
-  simp [h1]
-  apply Multiset.prod_eq_one
-  simp only [Multiset.mem_map, forall_exists_index, and_imp]
-  intro _ z hx rfl
-  exact hm1 z hx -/
 
 
-theorem oho {x : K} (h_int : IsIntegral ℤ x) (h : ∀ v : InfinitePlace K, v x ≤ 1) :
+theorem minpoly_mahlerMeasure_eq_one_of_le_one {x : K} (h_int : IsIntegral ℤ x)
+    (h : ∀ v : InfinitePlace K, v x ≤ 1) :
     ((minpoly ℤ x).map (algebraMap ℤ ℂ)).mahlerMeasure = 1 := by
-  have h1 : (minpoly ℤ x).leadingCoeff = 1 := Monic.leadingCoeff <| minpoly.monic h_int
-  have h1' : Monic (map (algebraMap ℤ ℂ) (minpoly ℤ x)) := Monic.map (algebraMap ℤ ℂ) h1
-  have : (map (Int.castRingHom ℂ) (minpoly ℤ x)).leadingCoeff = 1 := h1'
+  have : (map (Int.castRingHom ℂ) (minpoly ℤ x)).leadingCoeff = 1 :=
+    Monic.map (algebraMap ℤ ℂ) (minpoly.monic h_int)
   simp only [algebraMap_int_eq, mahlerMeasure_eq_leadingCoeff_mul_prod_roots, this, one_mem,
     CStarRing.norm_of_mem_unitary, one_mul]
   apply Multiset.prod_eq_one
   simp only [Multiset.mem_map, forall_exists_index, and_imp]
-  intro _ z hx rfl
-  have hb : z ∈ (Set.range fun (φ : K →+* ℂ) => φ x) := by
-    have := NumberField.Embeddings.range_eval_eq_rootSet_minpoly K ℂ x
-    rw [this, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_int, rootSet]
+  intro _ z _ rfl
+  have : z ∈ (Set.range fun (φ : K →+* ℂ) => φ x) := by
+    rw [Embeddings.range_eval_eq_rootSet_minpoly K ℂ x,
+      minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_int, rootSet]
     refine Multiset.mem_toFinset.mpr ?_
-    rw [aroots]
-    rw [map_map]
+    rw [aroots_def, map_map]
     aesop
-  have ha : ∃ v : InfinitePlace K, v x = ‖z‖ := by
-    obtain ⟨φ, rfl⟩ := hb
+  have : ∃ v : InfinitePlace K, v x = ‖z‖ := by
+    obtain ⟨φ, rfl⟩ := this
     use InfinitePlace.mk φ
     simp
-  obtain ⟨v, hv⟩ := ha
   grind
-section card
 
-open Set
-
-variable {A B : Type _} (f : A → B)
-
-lemma finite_of_finite_image_finite_fibers
-    {S : Set A} {T : Set B}
-    (hMap : ∀ a ∈ S, f a ∈ T)
-    (hT : T.Finite)
-    (hFibers : ∀ b ∈ T, (S ∩ {a | f a = b}).Finite) :
-    S.Finite := by
-  --classical
-  have : S = ⋃ b ∈ T, S ∩ {a | f a = b} := by
-    ext a
-    constructor
-    · intro ha
-      have hb : f a ∈ T := hMap a ha
-      refine mem_iUnion.mpr ⟨f a, mem_iUnion.mpr ⟨hb, ?_⟩⟩
-      simp [ha]
-    · intro ha
-      rcases mem_iUnion.mp ha with ⟨b, hb⟩
-      rcases mem_iUnion.mp hb with ⟨hbT, hab⟩
-      simpa using hab.1
-  rw [this]
-  exact Finite.biUnion' hT hFibers
-
-end card
+private lemma box_finite (d : ℕ) :
+    {p : ℤ[X] | p ≠ 0 ∧ p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}.Finite := by
+  have hfin := finite_mahlerMeasure_le d 1
+  have : {p : ℤ[X] | p ≠ 0 ∧ p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1} ⊆
+    {p : ℤ[X] | p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1} := by
+    gcongr 1
+    grind
+  exact Set.Finite.subset hfin this
 
 variable {x : Kˣ}
 
-local notation3 "d" => (minpoly ℤ (x : K)).natDegree
+private lemma degZQ {z : K} (h_int : IsIntegral ℤ z) :
+    (minpoly ℤ z).natDegree = (minpoly ℚ z).natDegree := by
+  rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_int]
+  refine (natDegree_map_of_leadingCoeff_ne_zero (algebraMap ℤ ℚ) ?_).symm
+  rw [Algebra.algebraMap_eq_smul_one, Int.smul_one_eq_cast]
+  norm_cast
+  rw [leadingCoeff_eq_zero]
+  exact minpoly.ne_zero h_int
 
-local notation3 "BoxPoly" =>
-  {p : ℤ[X] | p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
-
-local notation3 "BoxPoly0" =>
-  {p : ℤ[X] | p ≠ 0 ∧ p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
-
-lemma subs : BoxPoly0 ⊆ BoxPoly := by grind
-
-open Nat in
-lemma bpcard : Set.Finite BoxPoly0 := by
-  have hfin := finite_mahlerMeasure_le d 1
-  have : BoxPoly0 ⊆ BoxPoly := by
-    gcongr 1
-    grind
-  apply Set.Finite.subset hfin this
-
-/- theorem deg (y : Submonoid.closure {x}) : (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
-  obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp y.prop
-  rw [← h]
-  simp
-  sorry -/
-
-lemma inte (x : K ) (_ : IsIntegral ℤ x) : IsIntegral ℚ x := by
-  exact Algebra.IsIntegral.isIntegral x
-
-lemma mem_adj (x : K) : x ∈ IntermediateField.adjoin ℚ {x} := by
-  rw [← IntermediateField.adjoin_simple_le_iff]
-
-theorem deg' (h_int : IsIntegral ℤ (x : K)) (y : Kˣ) (hy : y ∈ (Submonoid.closure {x}).carrier) :
-    (minpoly ℤ ((y : Kˣ) : K)).natDegree ≤ d := by
-  obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp hy
-  rw [← h]
-  simp
+open IntermediateField in
+theorem natDegree_minpoly_pow_le (h_int : IsIntegral ℤ (x : K)) {n : ℕ} :
+    (minpoly ℤ (x ^ n : K)).natDegree ≤ (minpoly ℤ (x : K)).natDegree := by
   have h_intn : IsIntegral ℤ ((x : K) ^ n) := IsIntegral.pow h_int n
   convert_to (minpoly ℚ ((x : K) ^ n)).natDegree ≤ (minpoly ℚ (x : K)).natDegree
-  · rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_intn]
-    refine Eq.symm (natDegree_map_of_leadingCoeff_ne_zero (algebraMap ℤ ℚ) ?_)
-    rw [@Algebra.algebraMap_eq_smul_one]
-    rw [@Int.smul_one_eq_cast]
-    norm_cast
-    rw [leadingCoeff_eq_zero]
-    exact minpoly.ne_zero h_intn
-  · rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ h_int]
-    refine Eq.symm (natDegree_map_of_leadingCoeff_ne_zero (algebraMap ℤ ℚ) ?_)
-    rw [@Algebra.algebraMap_eq_smul_one]
-    rw [@Int.smul_one_eq_cast]
-    norm_cast
-    rw [leadingCoeff_eq_zero]
-    exact minpoly.ne_zero h_int
-  · rw [← IntermediateField.adjoin.finrank <| inte ((x : K) ^ n) h_intn,
-      ← IntermediateField.adjoin.finrank <| inte (x : K) h_int]
-    apply IntermediateField.finrank_le_of_le_right
-    rw [IntermediateField.adjoin_le_iff]
-    rw [@Set.singleton_subset_iff]
-    rw [@SetLike.mem_coe]
-    refine pow_mem ?_ n
-    exact mem_adj (x : K)
+  · exact degZQ h_intn
+  · exact degZQ h_int
+  · rw [← adjoin.finrank <| Algebra.IsIntegral.isIntegral ((x : K) ^ n),
+      ← adjoin.finrank <| Algebra.IsIntegral.isIntegral (x : K)]
+    apply finrank_le_of_le_right
+    rw [adjoin_le_iff, Set.singleton_subset_iff, SetLike.mem_coe]
+    refine pow_mem ?_ _
+    rw [← adjoin_simple_le_iff]
 
-    /- rw [← IntermediateField.adjoin.finrank]
-    ·
-      sorry
-    ·
-      sorry -/
-
-theorem dd (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
+open Set in
+theorem finite_closure_of_le_one (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
     Finite (Submonoid.closure {x}) := by
-  have (n : ℕ) : ((minpoly ℤ ((x : K) ^ n)).map (algebraMap ℤ ℂ)).mahlerMeasure = 1 := by
-    apply oho
-    exact IsIntegral.pow hx n
-    exact fun v ↦ bb h n v
+  have  hmp (n : ℕ) : ((minpoly ℤ ((x : K) ^ n)).map (algebraMap ℤ ℂ)).mahlerMeasure = 1 :=
+    minpoly_mahlerMeasure_eq_one_of_le_one (IsIntegral.pow hx n)
+    <| fun v ↦ InfinitePlace.pow_le_one_of_le_one (h v) n
+  let d := (minpoly ℤ (x : K)).natDegree
+  let Box :=
+    {p : ℤ[X] | p ≠ 0 ∧ p.natDegree ≤ d ∧ (p.map (Int.castRingHom ℂ)).mahlerMeasure ≤ 1}
   let f : Kˣ → ℤ[X] := fun y ↦ minpoly ℤ (y : K)
-  /- let F : (Submonoid.closure {x}).carrier → BoxPoly := fun y ↦ ⟨minpoly ℤ ((y : Kˣ): K), by
-    simp
-    refine ⟨deg y, ?_⟩
-    obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp y.prop
-    rw [← h]
-    exact le_of_eq (this n)⟩-/
-  have : (Submonoid.closure {x}).carrier.Finite := by
-    apply finite_of_finite_image_finite_fibers (T:= BoxPoly0) f _ bpcard
-    · intro p hp
-      refine Set.Finite.inter_of_right ?_ (Submonoid.closure {x}).carrier
-      have hs (z : Kˣ) (hz : f z = p ) : (z : K) ∈ p.aroots K := by
-        simp only [mem_roots', algebraMap_int_eq, IsRoot.def]
-        constructor
-        · refine (Polynomial.map_ne_zero_iff ?_).mpr ?_
-          exact RingHom.injective_int (Int.castRingHom K)
-          exact hp.1
-        · rw [← hz]
-          have := minpoly.aeval ℤ (z : K)
-          rw [aeval_def, eval₂_eq_eval_map] at this
-          simp_all
-          grind
-      let s : Set Kˣ := {y | (y : K) ∈ p.aroots K}
-      have fin : s.Finite := by
-        let f : Kˣ → K := fun y ↦ (y : K)
-        let t := {a : K | a ∈ p.aroots K}
-        have : f '' s ⊆ t:= by aesop
-        have htf : t.Finite := by
-          exact Multiset.finite_toSet (p.aroots K)
-        have : f.Injective := by
-          exact Units.val_injective
-        rw [← @Set.encard_lt_top_iff] at htf ⊢
-        apply lt_of_le_of_lt _ htf
-        apply Set.encard_le_encard_of_injOn (f:=f)
-        exact fun ⦃x⦄ a ↦ a
-        exact fun ⦃x₁⦄ a ⦃x₂⦄ a_1 ↦ by exact fun a ↦ this a
-      exact Set.Finite.subset fin hs
-    · intro y hy
-      obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp hy
-      refine ⟨?_, deg' hx y hy, ?_⟩
-      · refine minpoly.ne_zero ?_
-        rw [← h]
-        exact IsIntegral.pow hx n
-      · rw [← h]
-        exact le_of_eq (this n)
-  --apply finite_of_finite_image_finite_fibers
-  exact this
+  have hsubs : f '' (Submonoid.closure {x}) ⊆ Box := by
+    rintro p ⟨y, hy, hpy⟩
+    obtain ⟨n, h⟩ := Submonoid.mem_closure_singleton.mp hy
+    rw [← hpy, ← h]
+    refine ⟨minpoly.ne_zero <| IsIntegral.pow hx n, ?_, le_of_eq <| hmp n⟩
+    simp_rw [f]
+    exact natDegree_minpoly_pow_le hx
+  apply Finite.of_finite_fibers f <| Finite.subset (box_finite d) hsubs
+  intro p hp
+  apply Finite.inter_of_right
+  have : {x | f x = p} ⊆ {x | (x : K) ∈ p.aroots K} := by
+    intro z hz
+    simp only [mem_roots', algebraMap_int_eq, IsRoot.def,
+      Polynomial.map_ne_zero_iff <| RingHom.injective_int (Int.castRingHom K)]
+    refine ⟨(hsubs hp).1, ?_⟩
+    rw [← hz]
+    have := minpoly.aeval ℤ (z : K)
+    rw [aeval_def, eval₂_eq_eval_map] at this
+    aesop
+  simp_rw [preimage, mem_singleton_iff]
+  apply Finite.subset _ this
+  apply Finite.of_injOn (f := Units.val) (fun _ a ↦ a) (injOn_of_injective Units.val_injective)
+    <| Multiset.finite_toSet (p.aroots K)
 
-theorem cc (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)) :
-    ∃ k, 0 < k ∧ x ∈ rootsOfUnity k K := by
-  simp_rw [mem_rootsOfUnity]
+theorem IsOfFinOrder_of_InfinitePlace_le_one (h : ∀ v : InfinitePlace K, v x ≤ 1)
+    (hx : IsIntegral ℤ (x : K)) : IsOfFinOrder x := by
+  rw [isOfFinOrder_iff_pow_eq_one]
   let S : Submonoid Kˣ := Submonoid.closure {x}
   let f : ℕ → S := fun n ↦ ⟨x ^ n, by
       rw [Submonoid.mem_closure_singleton]
       exact ⟨n, rfl⟩⟩
-  --let S := {y : K | ∃ n, y = x ^ n}
-  have := dd h hx
+  have := finite_closure_of_le_one h hx
   have : ¬ f.Injective := by
     apply not_injective_infinite_finite f
   have : ∃ n m, f n = f m ∧ n < m := by
@@ -240,16 +127,19 @@ theorem cc (h : ∀ v : InfinitePlace K, v x ≤ 1) (hx : IsIntegral ℤ (x : K)
     rw [max_eq_left <| le_of_lt hne]
   simp only [Subtype.mk.injEq, f] at hxm
   simp [this, hxm, hne]
- /-
 
-  let f := fun v : InfinitePlace K => v x
-  have : finprod (fun v : InfinitePlace K => v x) = 1 := finprod_eq_one_of_forall_eq_one h
-  nth_rw 2 [← this] -/
+open IntermediateField in
+theorem Kronecker (hd : p.natDegree ≠ 0) (h_irr : Irreducible p) (h_mon : p.Monic)
+    (hp : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) : p = cyclotomic p.natDegree ℤ := by
+  let K := SplittingField (p.map (algebraMap ℤ ℚ))
+  have : NumberField K := by
+    exact
+      { to_charZero := SplittingField.instCharZero (map (algebraMap ℤ ℚ) p),
+        to_finiteDimensional :=
+          IsSplittingField.instFiniteDimensionalSplittingField (map (algebraMap ℤ ℚ) p) }
 
 
-  --rw [finprod_eq_prod_of_mulSupport_subset]
-
-
+  sorry
 
 
 
@@ -284,12 +174,6 @@ theorem Kronecker' (hd : p.natDegree ≠ 0) (h_irr : Irreducible p) (h_mon : p.M
 
   sorry
 
-
-theorem Kronecker (hd : p.natDegree ≠ 0) (h_irr : Irreducible p) (h_mon : p.Monic)
-    (hp : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) : p = cyclotomic p.natDegree ℤ := by
-  obtain ⟨k, hk⟩ := Kronecker' hd h_irr h_mon hp
-
-  sorry
 
 
 
