@@ -28,7 +28,7 @@ namespace Polynomial
 --#count_heartbeats in
 open Classical Multiset in
 theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p : K[X]}
-    (hsplit : Splits (RingHom.id K) p) (n : ℕ) :
+    (hsplit : Splits p) (n : ℕ) :
     ‖p.coeff n‖₊ ≤ ‖p.leadingCoeff‖₊ * p.natDegree.choose n *
     (p.roots.map (fun a ↦ ‖a‖₊)).sup ^ (p.natDegree - n) := by
   by_cases h₀ : p = 0; simp [h₀] --exclude the zero polynomial
@@ -36,8 +36,9 @@ theorem bdd_coeff_of_bdd_roots_and_leading_coeff {K : Type*} [NormedField K]  {p
   rw [not_lt] at h
   simp only [coeff_eq_esymm_roots_of_card (splits_iff_card_roots.mp (hsplit)) h, esymm,
     Finset.sum_multiset_map_count, nsmul_eq_mul, nnnorm_mul, nnnorm_pow, nnnorm_neg, nnnorm_one,
-    one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊,
-    mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
+    one_pow, mul_one, mul_assoc ‖p.leadingCoeff‖₊]
+   -- mul_le_mul_left (nnnorm_pos.mpr (leadingCoeff_ne_zero.mpr h₀))]
+  gcongr
   apply le_trans <| nnnorm_sum_le _ _
   simp_rw [Finset.prod_multiset_count, nnnorm_mul, nnnorm_prod, nnnorm_pow]
   let S := p.roots.powersetCard (p.natDegree - n)
