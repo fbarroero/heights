@@ -55,7 +55,7 @@ lemma abs_leadingCoeff_eq_one_of_mahlerMeasure_eq_one
   exact (Int.le_antisymm this h_ineq).symm
 
 
-lemma miao (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : p ≠ X) {z : ℂ} (hz : z ∈ p.aroots ℂ) :
+lemma miao (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : ¬ X ∣ p) {z : ℂ} (hz : z ∈ p.aroots ℂ) :
     ∃ n, 0 < n ∧ z ^ n = 1 := by
   have := norm_leadingCoeff_eq_one_of_mahlerMeasure_eq_one h
   simp [mahlerMeasure_eq_leadingCoeff_mul_prod_roots, this] at h
@@ -75,7 +75,7 @@ lemma miao (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : p ≠ X)
   --have := NumberField.Embeddings.pow_eq_one_of_norm_eq_one K ℂ
   sorry
 
-lemma bb (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : p ≠ X) : ∃ n, 0 < n ∧ cyclotomic n ℤ ∣ p := by
+lemma bb (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : ¬ X ∣ p) : ∃ n, 0 < n ∧ cyclotomic n ℤ ∣ p := by
   --refine int_cyclotomic_unique ?_
   have {z : ℂ} (hz : z ∈ p.aroots ℂ) := miao h hpx hz
 
