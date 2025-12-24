@@ -4,6 +4,7 @@ namespace Polynomial
 
 variable {p : ℤ[X]}
 
+--PRd
 /-- The Mahler measure of a cyclotomic polynomial is 1. -/
 theorem cyclotomic_mahlerMeasure_eq_one' {R : Type*} [CommRing R] [Algebra R ℂ] (n : ℕ) :
     ((cyclotomic n R).map (algebraMap R ℂ)).mahlerMeasure = 1 := by
@@ -31,19 +32,13 @@ lemma norm_leadingCoeff_eq_one_of_mahlerMeasure_eq_one
   have : 0 < |p.leadingCoeff| := by simp_all
   exact_mod_cast (Int.le_antisymm this h_ineq).symm
 
---useless?
+
 lemma abs_leadingCoeff_eq_one_of_mahlerMeasure_eq_one
     (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) : |p.leadingCoeff| = 1 := by
-  rcases eq_or_ne p 0 with hp | hp
-  · have : (map (Int.castRingHom ℂ) p) = 0 := by simp [hp]
-    simp [this] at h
-  have h_ineq := leading_coeff_le_mahlerMeasure <| p.map (Int.castRingHom ℂ)
-  rw [h, leadingCoeff_map_of_injective <| RingHom.injective_int (Int.castRingHom ℂ)] at h_ineq
-  simp only [eq_intCast, Complex.norm_intCast] at h_ineq
-  norm_cast at h_ineq
-  have : 0 < |p.leadingCoeff| := by simp_all
-  exact (Int.le_antisymm this h_ineq).symm
-
+  have := norm_leadingCoeff_eq_one_of_mahlerMeasure_eq_one h
+  rw [leadingCoeff_map_of_injective <| RingHom.injective_int (Int.castRingHom ℂ), eq_intCast]
+    at this
+  norm_cast at this
 
 lemma Multiset.mem_le_prod_of_one_le {α : Type u_1} {β : Type u_2} [CommMonoid α]
     [CommMonoidWithZero β] [PartialOrder β] [PosMulMono β] [ZeroLEOneClass β]
@@ -62,7 +57,7 @@ lemma Multiset.mem_le_prod_of_one_le {α : Type u_1} {β : Type u_2} [CommMonoid
 /-
 If the product of max(1, |root|) for all roots is 1, then every root has absolute value at most 1.
 -/
-lemma roots_le_one {p : ℤ[X]} (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1)
+lemma norm_le_one_of_mahlerMeasure_eq_one {p : ℤ[X]} (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1)
     (z : ℂ) (hz : z ∈ (Polynomial.map (Int.castRingHom ℂ) p).roots) : ‖z‖ ≤ 1 := by
   have hroots :
       (Multiset.map (fun a ↦ max 1 ‖a‖) (Polynomial.map (Int.castRingHom ℂ) p).roots).prod = 1 := by
@@ -76,14 +71,31 @@ lemma roots_le_one {p : ℤ[X]} (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure
 variable (K : Type u_1) [Field K] [NumberField K] (A : Type u_2)
   [NormedField A] [IsAlgClosed A] [NormedAlgebra ℚ A]
 
-theorem pow_eq_one_of_norm_le_one {x : K} (hx₀ : x ≠ 0) (hxi : IsIntegral ℤ x)
+theorem NumberField.Embeddings.pow_eq_one_of_norm_le_one {x : K} (hx₀ : x ≠ 0) (hxi : IsIntegral ℤ x)
     (hx : ∀ φ : K →+* A, ‖φ x‖ ≤ 1) : ∃ (n : ℕ) (_ : 0 < n), x ^ n = 1 := by sorry
 
 
+theorem isIntegral_of_mahlerMeasure_eq_one (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1)
+    {z : ℂ} (hz : z ∈ p.aroots ℂ) : IsIntegral ℤ z := by
+  have hplc : p.leadingCoeff = 1 ∨ p.leadingCoeff = -1 := abs_eq_abs.mp
+    <| abs_leadingCoeff_eq_one_of_mahlerMeasure_eq_one h
+  let p' := C (1 / p.leadingCoeff) * p
+  have hp'Monic : p'.Monic := by aesop (add safe (by simp [Monic.def]))
+  grind [IsIntegral, RingHom.IsIntegralElem, mem_roots', IsRoot.def, eval₂_mul, eval_map]
+
+
 open IntermediateField in
-lemma pow_eq_one_of_isIntegral_of_norm_le_one {x : ℂ} (h_alg_int : IsIntegral ℤ x)
-    (h_MM : ∀ w : ℂ, (minpoly ℤ x).aeval w = 0 → ‖w‖ ≤ 1) :
-    ∃ n, 0 < n ∧ x ^ n = 1 := by sorry
+theorem pow_eq_one_of_mahlerMeasure_eq_one (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1)
+    {z : ℂ} (hz₀ : z ≠ 0) (hz : z ∈ p.aroots ℂ) : ∃ n, 0 < n ∧ z ^ n = 1 := by
+  let K := adjoin ℚ {z}
+  letI : NumberField K := {
+    to_charZero := IntermediateField.charZero ℚ⟮z⟯,
+    to_finiteDimensional := adjoin.finiteDimensional
+      (isIntegral_of_mahlerMeasure_eq_one h hz).tower_top}
+  let y : K := ⟨z, mem_adjoin_simple_self ℚ z⟩
+  letI : Nonempty (K →+* ℂ) := NumberField.Embeddings.instNonemptyRingHom K ℂ
+  --convert NumberField.Embeddings.pow_eq_one_of_norm_le_one K ℂ
+  sorry
 
 /-
 If a complex number is an algebraic integer and all its conjugates have absolute value 1, then it is a root of unity.
@@ -99,7 +111,6 @@ lemma complex_pow_eq_one_of_isIntegral_of_norm_eq_one {x : ℂ} (h_alg_int : IsI
              to_finiteDimensional := adjoin.finiteDimensional h_alg_int.tower_top }
   letI : Nonempty (adjoin ℚ {x} →+* ℂ) := by
     apply NumberField.Embeddings.instNonemptyRingHom ↥ℚ⟮x⟯ ℂ
-
   have h_values (φ : (adjoin ℚ {x}) →+* ℂ) : ‖φ y‖ = 1 := by
     have h_poly : aeval y (minpoly ℤ x) = 0 := by
         convert minpoly.aeval ℤ x
@@ -109,18 +120,103 @@ lemma complex_pow_eq_one_of_isIntegral_of_norm_eq_one {x : ℂ} (h_alg_int : IsI
   suffices ∃ n : ℕ, (0 < n ∧ y ^ n = 1) by simp_all [y, Subtype.ext_iff]
   -- By `NumberField.Embeddings.pow_eq_one_of_norm_eq_one`, $x$ is a root of unity.
   convert NumberField.Embeddings.pow_eq_one_of_norm_eq_one (x := y) (adjoin ℚ {x}) ℂ
-  · simp_all only [exists_prop, forall_const, Classical.imp_iff_left_iff, y]
-    obtain ⟨p, hp⟩ := h_alg_int;
-    rw [algebraMap_int_eq] at hp;
-    refine Or.inl ⟨p, hp.1, ?_⟩;
-    simp_all only [algebraMap_int_eq, eval₂_eq_sum_range, eq_intCast, SubmonoidClass.mk_pow,
-      ← Subtype.coe_inj, AddSubmonoidClass.coe_finset_sum, MulMemClass.coe_mul,
-      SubringClass.coe_intCast, ZeroMemClass.coe_zero]
+  simp_all only [exists_prop, forall_const, Classical.imp_iff_left_iff, y]
+  obtain ⟨p, hp⟩ := h_alg_int;
+  rw [algebraMap_int_eq] at hp;
+  refine Or.inl ⟨p, hp.1, ?_⟩;
+  simp_all only [algebraMap_int_eq, eval₂_eq_sum_range, eq_intCast, SubmonoidClass.mk_pow,
+    ← Subtype.coe_inj, AddSubmonoidClass.coe_finset_sum, MulMemClass.coe_mul,
+    SubringClass.coe_intCast, ZeroMemClass.coe_zero]
+
+
+/-
+If a complex number is an algebraic integer and all its conjugates have absolute value 1, then it is a root of unity.
+-/
+open IntermediateField in
+lemma complex_pow_eq_one_of_isIntegral_of_norm_le_one {x : ℂ} (hx₀ : x ≠ 0) (h_alg_int : IsIntegral ℤ x)
+    (h_conj : ∀ w : ℂ, (minpoly ℤ x).aeval w = 0 → ‖w‖ ≤ 1) :
+    ∃ n, 0 < n ∧ x ^ n = 1 := by
+  let y : ℚ⟮x⟯ := ⟨x, mem_adjoin_simple_self ℚ x⟩
+  letI : NumberField ℚ⟮x⟯ := {
+    to_charZero := IntermediateField.charZero ℚ⟮x⟯,
+    to_finiteDimensional := adjoin.finiteDimensional h_alg_int.tower_top}
+  letI : Nonempty (ℚ⟮x⟯ →+* ℂ) := NumberField.Embeddings.instNonemptyRingHom ℚ⟮x⟯ ℂ
+  have h_values (φ : ℚ⟮x⟯ →+* ℂ) : ‖φ y‖ ≤ 1 := by
+    have h_poly : aeval y (minpoly ℤ x) = 0 := by
+        convert minpoly.aeval ℤ x
+        simp [aeval_def, eval₂_eq_sum_range, ← Subtype.coe_inj, y]
+    apply h_conj
+    simpa [aeval_def] using congr_arg φ h_poly
+  have hy₀ : y ≠ 0 := Subtype.coe_ne_coe.mp hx₀
+  suffices ∃ n : ℕ, (0 < n ∧ y ^ n = 1) by simp_all [y, Subtype.ext_iff]
+  -- By `NumberField.Embeddings.pow_eq_one_of_norm_le_one`, $x$ is a root of unity.
+  convert NumberField.Embeddings.pow_eq_one_of_norm_le_one (x := y) (adjoin ℚ {x}) ℂ hy₀
+  simp_all [exists_prop, forall_const, Classical.imp_iff_left_iff, y]
+  obtain ⟨p, hp⟩ := h_alg_int;
+  rw [algebraMap_int_eq] at hp;
+  refine Or.inl ⟨p, hp.1, ?_⟩;
+  simp_all only [algebraMap_int_eq, eval₂_eq_sum_range, eq_intCast, SubmonoidClass.mk_pow,
+    ← Subtype.coe_inj, AddSubmonoidClass.coe_finset_sum, MulMemClass.coe_mul,
+    SubringClass.coe_intCast, ZeroMemClass.coe_zero]
+
+
+lemma miao (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) {z : ℂ} (hz₀ : z ≠ 0)
+    (hz : z ∈ p.aroots ℂ) : ∃ n, 0 < n ∧ z ^ n = 1 := by
+  -- By `roots_le_one`, every root of $p$ has absolute value at most 1.
+  have h_le_one : ∀ z ∈ (Polynomial.map (Int.castRingHom ℂ) p).roots, ‖z‖ ≤ 1 :=
+    norm_le_one_of_mahlerMeasure_eq_one h;
+  have hplc : p.leadingCoeff = 1 ∨ p.leadingCoeff = -1 := abs_eq_abs.mp
+    <| abs_leadingCoeff_eq_one_of_mahlerMeasure_eq_one h
+  have hp₀ : p ≠ 0 := fun h0 ↦ by simp [h0] at h
+  let a := 1 / p.leadingCoeff
+  let p' := C a * p
+  have hp'Monic : p'.Monic := by aesop (add safe (by simp [Monic.def]))
+  have h_p'_deg : p'.natDegree ≠ 0 := by
+    simp only [mem_roots',  IsRoot.def] at hz
+    rw [Nat.ne_zero_iff_zero_lt, Monic.natDegree_pos hp'Monic]
+    have hroot := hz.2
+    intro h1
+    have : p = p.leadingCoeff := by
+      cases hplc with
+      | inl h_1 => simp_all [p', a]
+      | inr h_2 =>
+        simp_all only [p', a]
+        grind
+    rw [this, Polynomial.map_intCast, eval_intCast, Int.cast_eq_zero] at hroot
+    grind
+  have h_ev_p : (aeval z p) = 0 := by
+    simp_all [aeval_def, eval_map]
+/-   have h_ev_p' : (aeval z p') = 0 := by
+    simp_all [p', a] -/
+  apply complex_pow_eq_one_of_isIntegral_of_norm_le_one hz₀
+    <| IsIntegral.of_aeval_monic hp'Monic h_p'_deg (by simp_all [p', a, isIntegral_zero])
+  intro w hw
+  have hw' : w ∈ (Polynomial.map (Int.castRingHom ℂ) p).roots := by
+    have hmp : w ∈ (map (Int.castRingHom ℂ) (minpoly ℤ z)).roots := by
+      rw [mem_roots', IsRoot.def, eval_map]
+
+      sorry
+    have : (map (Int.castRingHom ℂ) (minpoly ℤ z)).roots ⊆ (map (Int.castRingHom ℂ) p).roots := by
+      apply Multiset.subset_of_le <| Polynomial.roots.le_of_dvd (by simp_all) _
+      refine map_dvd (Int.castRingHom ℂ) ?_
+      rw [← minpoly.isIntegrallyClosed_dvd_iff, h_ev_p]
+
+
+      sorry
+    exact this hmp
+/-
+    rw [aeval_def, ← eval_map] at hw
+    simp [mem_roots',  IsRoot.def]
+    refine ⟨ne_zero_of_mem_roots hz, ?_⟩
+    convert_to (aeval w) p = 0
+    · simp [aeval_def, eval_map]
+
+    sorry -/
+  exact norm_le_one_of_mahlerMeasure_eq_one h w hw'
 
 
 
-
-lemma miao (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : ¬ X ∣ p) {z : ℂ} (hz : z ∈ p.aroots ℂ) :
+lemma miao' (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : ¬ X ∣ p) {z : ℂ} (hz : z ∈ p.aroots ℂ) :
     ∃ n, 0 < n ∧ z ^ n = 1 := by
   have := norm_leadingCoeff_eq_one_of_mahlerMeasure_eq_one h
   simp [mahlerMeasure_eq_leadingCoeff_mul_prod_roots, this] at h
@@ -142,7 +238,7 @@ lemma miao (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : ¬ X ∣
 
 lemma bb (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1) (hpx : ¬ X ∣ p) : ∃ n, 0 < n ∧ cyclotomic n ℤ ∣ p := by
   --refine int_cyclotomic_unique ?_
-  have {z : ℂ} (hz : z ∈ p.aroots ℂ) := miao h hpx hz
+  have {z : ℂ} (hz : z ∈ p.aroots ℂ) := miao' h hpx hz
 
   /- rw [(IsAlgClosed.splits (map (Int.castRingHom ℂ) p)).eq_prod_roots,
    (IsAlgClosed.splits (cyclotomic' p.natDegree ℂ)).eq_prod_roots]
