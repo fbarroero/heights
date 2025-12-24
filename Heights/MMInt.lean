@@ -68,11 +68,11 @@ lemma norm_le_one_of_mahlerMeasure_eq_one {p : ℤ[X]} (h : (p.map (Int.castRing
   exact Multiset.mem_le_prod_of_one_le (fun a => max 1 ‖a‖) (fun a => le_max_left 1 ‖a‖)
     (Polynomial.map (Int.castRingHom ℂ) p).roots z hz
 
-variable (K : Type u_1) [Field K] [NumberField K] (A : Type u_2)
-  [NormedField A] [IsAlgClosed A] [NormedAlgebra ℚ A]
+/- variable (K : Type u_1) [Field K] [NumberField K] (A : Type u_2)
+  [NormedField A] [IsAlgClosed A] [NormedAlgebra ℚ A] -/
 
-theorem NumberField.Embeddings.pow_eq_one_of_norm_le_one {x : K} (hx₀ : x ≠ 0) (hxi : IsIntegral ℤ x)
-    (hx : ∀ φ : K →+* A, ‖φ x‖ ≤ 1) : ∃ (n : ℕ) (_ : 0 < n), x ^ n = 1 := by sorry
+/- theorem NumberField.Embeddings.pow_eq_one_of_norm_le_one {x : K} (hx₀ : x ≠ 0) (hxi : IsIntegral ℤ x)
+    (hx : ∀ φ : K →+* A, ‖φ x‖ ≤ 1) : ∃ (n : ℕ) (_ : 0 < n), x ^ n = 1 := by sorry -/
 
 
 theorem isIntegral_of_mahlerMeasure_eq_one (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1)
@@ -94,8 +94,28 @@ theorem pow_eq_one_of_mahlerMeasure_eq_one (h : (p.map (Int.castRingHom ℂ)).ma
       (isIntegral_of_mahlerMeasure_eq_one h hz).tower_top}
   let y : K := ⟨z, mem_adjoin_simple_self ℚ z⟩
   letI : Nonempty (K →+* ℂ) := NumberField.Embeddings.instNonemptyRingHom K ℂ
-  --convert NumberField.Embeddings.pow_eq_one_of_norm_le_one K ℂ
-  sorry
+  have hy₀ : y ≠ 0 := Subtype.coe_ne_coe.mp hz₀
+  have hp₀ : p ≠ 0 := fun h0 ↦ by simp [h0] at h
+  have (φ : K →+* ℂ) : ‖φ y‖ ≤ 1 := by
+    apply norm_le_one_of_mahlerMeasure_eq_one h
+    rw [mem_roots', IsRoot.def, eval_map, ← algebraMap_int_eq, ← aeval_def]
+    constructor
+    · grind [Polynomial.map_eq_zero_iff <| RingHom.injective_int (algebraMap ℤ ℂ)]
+    have : (aeval (φ y)) p = φ ((aeval (y)) p) := by
+      simp [aeval_def]
+    rw [this, map_eq_zero_iff φ <| RingHom.injective φ]
+    have h_aeval_min : aeval y (minpoly ℤ z) = 0 := by
+        convert minpoly.aeval ℤ z
+        simp [aeval_def, eval₂_eq_sum_range, ← Subtype.coe_inj, y]
+    apply Polynomial.aeval_eq_zero_of_dvd_aeval_eq_zero _ h_aeval_min
+    apply minpoly.isIntegrallyClosed_dvd <| isIntegral_of_mahlerMeasure_eq_one h hz
+    rw [aroots_def, mem_roots'] at hz
+    simp_all [aeval_def, eval_map]
+  have hyInt : IsIntegral ℤ y := coe_isIntegral_iff.mp <| isIntegral_of_mahlerMeasure_eq_one h hz
+  convert NumberField.Embeddings.pow_eq_one_of_norm_le_one K ℂ hy₀
+  simp_all [Submonoid.mk_eq_one K.toSubfield.toSubmonoid, y]
+
+---UNTIL HERE
 
 /-
 If a complex number is an algebraic integer and all its conjugates have absolute value 1, then it is a root of unity.
