@@ -115,6 +115,29 @@ theorem pow_eq_one_of_mahlerMeasure_eq_one (h : (p.map (Int.castRingHom ℂ)).ma
   convert NumberField.Embeddings.pow_eq_one_of_norm_le_one K ℂ hy₀
   simp_all [Submonoid.mk_eq_one K.toSubfield.toSubmonoid, y]
 
+theorem cyclotomomic_dvd_of_mahlerMeasure_eq_one (h : (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1)
+    (hX : ¬ X ∣ p) (hpdeg : p.degree ≠ 0) : ∃ n, 0 < n ∧ cyclotomic n ℤ ∣ p := by
+  have h_split : (map (Int.castRingHom ℂ) p).Splits := IsAlgClosed.splits (map (Int.castRingHom ℂ) p)
+  have hpdegC : (map (Int.castRingHom ℂ) p).degree ≠ 0 := by
+    contrapose! hpdeg
+    rw [← hpdeg]
+    refine (degree_map_eq_of_injective (RingHom.injective_int (Int.castRingHom ℂ)) p).symm
+  obtain ⟨z, hz⟩ := Polynomial.Splits.exists_eval_eq_zero h_split hpdegC
+  have hz₀ : z ≠ 0 := by
+    contrapose! hX
+    simp_all [X_dvd_iff, coeff_zero_eq_aeval_zero]
+  have h_z_root : z ∈ p.aroots ℂ := by aesop
+  obtain ⟨n, h_n_pos, hz_pow⟩ := pow_eq_one_of_mahlerMeasure_eq_one h hz₀ h_z_root
+  obtain ⟨m, h_m_pos, h_prim⟩ := IsPrimitiveRoot.exists_pos hz_pow (by omega)
+  use m, h_m_pos
+  rw [Polynomial.cyclotomic_eq_minpoly h_prim h_m_pos]
+  apply minpoly.isIntegrallyClosed_dvd <| isIntegral_of_mahlerMeasure_eq_one h h_z_root
+  simp_all [aeval_def, eval_map]
+
+theorem mahlerMeasure_eq_one_iff (h_irr : Irreducible p) :
+    (p.map (Int.castRingHom ℂ)).mahlerMeasure = 1 ↔ p = X ∨ ∃ n, 0 < n ∧ cyclotomic n ℤ = p := by
+  sorry
+
 ---UNTIL HERE
 
 /-
