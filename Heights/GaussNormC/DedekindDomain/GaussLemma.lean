@@ -58,7 +58,7 @@ theorem contentIdeal_eq_top_iff_forall_gaussNorm_eq_one [Nontrivial R] (hR : ¬I
   simp [← not_iff_not, gaussNorm_ne_one_iff_contentIdeal_le, ideal_ne_top_iff_exists hR]
 
 theorem isPrimitive_iff_forall_gaussNorm_eq_one [Nontrivial R] [IsBezout R] (hR : ¬IsField R) :
-    p.IsPrimitive ↔ ∀ (v : HeightOneSpectrum R),
+    p.IsPrimitive ↔ ∀ v : HeightOneSpectrum R,
     (p.map (algebraMap R K)).gaussNorm (v.adicAbv hb) 1 = 1 := by
   rw [isPrimitive_iff_contentIdeal_eq_top,
     p.contentIdeal_eq_top_iff_forall_gaussNorm_eq_one (K := K) hb hR]
