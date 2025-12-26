@@ -7,7 +7,7 @@ open IsDedekindDomain WithZeroMulInt
 namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] {K S : Type*} [Field K] [CommSemiring S]
-  [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R) {b : NNReal} (hb : 1 < b) (x : R)
+  [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R) {b : NNReal} (hb : 1 < b) (r : R)
 
 
 
@@ -39,14 +39,14 @@ theorem isNonarchimedean_intAdicAbv :
 theorem intAdicAbv_le_one : v.intAdicAbv hb r ≤ 1 := by
   simpa [intAdicAbv, intAdicAbvDef, toNNReal_le_one_iff hb] using intValuation_le_one v r
 
-theorem intAdicAbv_coe_lt_one_iff : v.intAdicAbv hb r < 1 ↔ r ∈ v.asIdeal := by
+theorem intAdicAbv_lt_one_iff : v.intAdicAbv hb r < 1 ↔ r ∈ v.asIdeal := by
   simpa [intAdicAbv, intAdicAbvDef, toNNReal_lt_one_iff hb] using intValuation_lt_one_iff_mem v r
 
-theorem intAdicAbv_coe_eq_one_iff :
+theorem intAdicAbv_eq_one_iff :
     v.intAdicAbv hb r = 1 ↔ r ∉ v.asIdeal := by
   contrapose
-  rw [← v.intAdicAbv_coe_lt_one_iff hb, ne_iff_lt_iff_le]
-  exact intAdicAbv_le_one v hb
+  rw [← v.intAdicAbv_lt_one_iff hb, ne_iff_lt_iff_le]
+  exact intAdicAbv_le_one v hb r
 
 
 --PRd
