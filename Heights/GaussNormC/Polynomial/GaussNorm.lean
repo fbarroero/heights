@@ -130,10 +130,11 @@ theorem isNonarchimedean_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F R �
   by_cases hpq : p + q = 0; simp [hpq, hc, gaussNorm_nonneg]
   rw [gaussNorm]
   simp only [support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, coeff_add,
-    hp, hq, Finset.sup'_le_iff, mem_support_iff]
+    Finset.sup'_le_iff, mem_support_iff]
   intro i hi
   calc
-  v (p.coeff i + q.coeff i) * c ^ i ≤ max (v (p.coeff i)) (v (q.coeff i)) * c ^ i := by
+  v (p.coeff i + q.coeff i) * c ^ i
+    ≤ max (v (p.coeff i)) (v (q.coeff i)) * c ^ i := by
     gcongr
     exact hna (p.coeff i) (q.coeff i)
   _ = max (v (p.coeff i) * c ^ i) (v (q.coeff i) * c ^ i) := by
@@ -142,7 +143,7 @@ theorem isNonarchimedean_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F R �
     apply max_le_max <;>
     exact le_gaussNorm v _ hc i
 
-theorem gaussNorm_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) /- {c : ℝ} (hc : 0 ≤ c) -/ :
+theorem gaussNorm_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) :
     (p * q).gaussNorm v c = p.gaussNorm v c * q.gaussNorm v c := by
   by_cases hpq : ¬ p * q = 0
   · have h_supp_p : p.support.Nonempty := support_nonempty.mpr <| left_ne_zero_of_mul hpq
