@@ -143,21 +143,61 @@ theorem isNonarchimedean_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F R �
     apply max_le_max <;>
     exact le_gaussNorm v _ hc i
 
-theorem gaussNorm_mul [IsDomain R] (hna : IsNonarchimedean v) (p q : R[X]) :
+lemma exists_min_eq_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] (p : R[X]) (hc : 0 ≤ c) :
+    ∃ i, p.gaussNorm v c = v (p.coeff i) * c ^ i ∧
+    ∀ j, j < i →  v (p.coeff j) * c ^ j < p.gaussNorm v c := by
+  have h_nonempty : {i | gaussNorm v c p = v (p.coeff i) * c ^ i}.Nonempty := by
+    obtain ⟨i, hi⟩ := exists_eq_gaussNorm v c p
+    exact ⟨i, Set.mem_setOf.mpr hi⟩
+  refine ⟨Nat.find h_nonempty, Nat.find_spec h_nonempty, ?_⟩
+  intro j hj_lt
+  simp only [Nat.lt_find_iff, Set.mem_setOf_eq] at hj_lt
+  exact lt_of_le_of_ne (le_gaussNorm v _ hc j) fun a ↦ hj_lt j (Nat.le_refl j) a.symm
+
+open Finset in
+theorem gaussNorm_mul_le_mul_gaussNorm [IsDomain R] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] [MulHomClass F R ℝ]
+    (hna : IsNonarchimedean v) (p q : R[X]) (hc : 0 ≤ c) :
+    (p * q).gaussNorm v c ≤ p.gaussNorm v c * q.gaussNorm v c := by
+  rcases eq_or_ne (p * q) 0 with hpq | hpq
+  · simp [hpq, hc, gaussNorm_nonneg, mul_nonneg]
+  have h_supp_p : p.support.Nonempty := support_nonempty.mpr <| left_ne_zero_of_mul hpq
+  have h_supp_q : q.support.Nonempty := support_nonempty.mpr <| right_ne_zero_of_mul hpq
+  simp [gaussNorm, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, h_supp_p,
+      h_supp_q, gaussNorm, sup'_le_iff, mem_support_iff, ne_eq]
+  intro i hi
+  rw [coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  let g := fun k ↦ p.coeff (k, i - k).1 * q.coeff (k, i - k).2
+  obtain ⟨j ,hj1, hj2⟩ := IsNonarchimedean.finset_image_add_of_nonempty hna g nonempty_range_add_one
+  trans v (g j) * c ^ i
+  · gcongr
+  simp [g]
+  have : j ≤ i := by grind
+  have : c ^ j * c ^ (i - j) = c ^ i := by simp_all [← pow_add]
+  calc
+  v (p.coeff j) * v (q.coeff (i - j)) * c ^ i
+  _ = (v (p.coeff j) * c ^ j) * (v (q.coeff (i - j)) * c ^ (i - j)) := by
+      grind
+  _ ≤ (p.support.sup' _ fun i ↦ v (p.coeff i) * c ^ i)
+      * q.support.sup' _ fun i ↦ v (q.coeff i) * c ^ i := by
+      have hp_le := p.le_gaussNorm v hc j
+      have hq_le := q.le_gaussNorm v hc (i - j)
+      simp only [gaussNorm, h_supp_p, h_supp_q, ↓reduceDIte] at hp_le hq_le
+      have := p.gaussNorm_nonneg v hc
+      simp_rw [gaussNorm, h_supp_p] at this
+      gcongr
+
+-- needs  1 ≤ c?
+open Finset in
+theorem gaussNorm_mul [IsDomain R] [MulHomClass F R ℝ] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
+    (hna : IsNonarchimedean v) (p q : R[X]) (hc : 0 ≤ c) :
     (p * q).gaussNorm v c = p.gaussNorm v c * q.gaussNorm v c := by
+  apply le_antisymm
+  exact gaussNorm_mul_le_mul_gaussNorm v c hna p q hc
   by_cases hpq : ¬ p * q = 0
   · have h_supp_p : p.support.Nonempty := support_nonempty.mpr <| left_ne_zero_of_mul hpq
     have h_supp_q : q.support.Nonempty := support_nonempty.mpr <| right_ne_zero_of_mul hpq
     simp only [gaussNorm, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, h_supp_p,
       h_supp_q]
-    apply le_antisymm
-    · simp only [Finset.sup'_le_iff, mem_support_iff, ne_eq]
-      intro i hi
-      rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-      let g := fun k ↦ p.coeff (k, i - k).1 * q.coeff (k, i - k).2
-      --have := IsNonarchimedean.finset_image_add_of_nonempty hna g Finset.nonempty_range_succ
-      sorry
-
     · sorry
   · rw [not_not, mul_eq_zero] at hpq
     cases hpq with
@@ -188,6 +228,8 @@ section AbsoluteValue
 variable (v : AbsoluteValue R ℝ)
 
 --TODO
+
+
 
 end AbsoluteValue
 
