@@ -40,25 +40,12 @@ lemma apply_sum_eq_of_lt {α β F : Type*} [AddCommGroup α] [FunLike F α R] [A
   | cons a s h hs h_ind =>
     intro k hk hmax
     by_cases ha : k = a
-    · subst ha
-      simp_all
+    · rw [sum_cons, ha]
       apply add_eq_left_of_lt nonarch
-      apply lt_of_le_of_lt <| apply_sum_le_sup_of_isNonarchimedean (l := l) nonarch hs
-      refine (sup'_lt_iff hs).mpr ?_
-      intro j hj
-      apply hmax j hj
-      grind
-    · simp_all
-      have := h_ind hk hmax.2
-      rwa [add_eq_right_of_lt nonarch]
-
-
-      sorry
-
-
-
-
-
+      grw [apply_sum_le_sup_of_isNonarchimedean nonarch hs]
+      grind [sup'_lt_iff]
+    · simp only [mem_cons, false_or, forall_eq_or_imp, ha] at hk hmax
+      grind [add_eq_right_of_lt nonarch, h_ind hk hmax.2]
 
 end IsNonarchimedean
 
@@ -163,6 +150,44 @@ lemma le_gaussNormC [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] (p : R[X]) {
 
  -/
 
+
+@[simp]
+lemma gaussNorm_c_eq_zero [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] :
+    p.gaussNorm v 0 = v (p.coeff 0) := by
+  have hfun : (fun i ↦ v (p.coeff i) * 0 ^ i) = fun i ↦ if i = 0 then v (p.coeff 0) else 0 := by
+      aesop
+  rcases eq_or_ne (p.coeff 0) 0 with hcoeff0 | hcoeff0
+  · simp_all [gaussNorm]
+  · have : p.support.Nonempty := by
+      use 0
+      simp [hcoeff0]
+    have : 0 ≤ v (p.coeff 0) := by
+      positivity
+    simp_all [gaussNorm]
+    apply le_antisymm
+    · rw [Finset.sup'_le_iff]
+      intro n hn
+      rcases eq_or_ne n 0 with h | h <;> simp [h]
+    · have : v (p.coeff 0) = v (p.coeff 0) * 0 ^ 0  := by simp
+      rw [this, Finset.le_sup'_iff]
+      use 0
+      grind
+
+
+
+  /- simp [gaussNorm, hp]
+  apply le_antisymm
+  · rw [Finset.sup'_le_iff]
+    intro n hn
+    rcases eq_or_ne n 0 with h | h <;> simp [h]
+  · have : v (p.coeff 0) = v (p.coeff 0) * 0 ^ 0  := by simp
+
+    rw [this, Finset.le_sup'_iff]
+
+    sorry -/
+
+
+
 theorem isNonarchimedean_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
     (hna : IsNonarchimedean v) {c : ℝ} (hc : 0 ≤ c) : IsNonarchimedean (gaussNorm v c) := by
   intro p q
@@ -225,29 +250,84 @@ theorem gaussNorm_mul_le_mul_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F 
       gcongr
 
 open Finset in
-theorem mul_gaussNorm_le_gaussNorm_mul {R F : Type*} [Ring R] [FunLike F R ℝ] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ] [MulHomClass F R ℝ] [AddGroupSeminormClass F R ℝ]
-    {v : F} (hna : IsNonarchimedean v) (p q : R[X]) (hc : 0 ≤ c) :
+theorem mul_gaussNorm_le_gaussNorm_mul {R F : Type*} [Ring R] [IsDomain R] [FunLike F R ℝ] [ZeroHomClass F R ℝ]
+    [NonnegHomClass F R ℝ] [MulHomClass F R ℝ] [AddGroupSeminormClass F R ℝ]
+    {v : F} (hna : IsNonarchimedean v) (p q : R[X]) (hc : 0 ≤ c) :  ---set 1 ≤ c
     p.gaussNorm v c * q.gaussNorm v c ≤ (p * q).gaussNorm v c := by
+  rcases eq_or_lt_of_le hc with hc0 | hc0
+  · rcases eq_or_ne (p * q) 0 <;> aesop
   obtain ⟨i, hi_p, hlt_p⟩ := exists_min_eq_gaussNorm v c p hc
   obtain ⟨j, hj_q, hlt_q⟩ := exists_min_eq_gaussNorm v c q hc
-  apply le_trans _ ((p * q).le_gaussNorm v hc (i + j))
-  rw [hi_p, hj_q, coeff_mul]
+  apply le_of_eq_of_le _ <| (p * q).le_gaussNorm v hc (i + j)
+  rw [hi_p, hj_q, coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  simp
+/-   have hnaaaa (n : ℕ) : IsNonarchimedean (fun x ↦ v x * c ^ n) := by
+    intro a b
+    calc
+    v (a + b) * c ^ n
+      ≤ max (v a) (v b) * c ^ n := by
+        gcongr
+        exact hna a b
+    _ = max (v a * c ^ n) (v b * c ^ n) := by
+      rw [max_mul_of_nonneg _ _ (pow_nonneg hc _)] -/
+
+  have : i ∈ range (i + j).succ := by simp
+  have := IsNonarchimedean.apply_sum_eq_of_lt hna (k := i) (l := fun x ↦ p.coeff x * q.coeff (i + j - x)) (s := range (i + j).succ) this
+  rw [this]
+  grind
+  --
+  simp
+  intro x hx hneq
+  apply lt_of_mul_lt_mul_right (a := c ^ (i + j)) _ <| pow_nonneg hc (i + j)
   calc
+  v (p.coeff x) * v (q.coeff (i + j - x)) * c ^ (i + j)
+    = v (p.coeff x) * c ^ x * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
+      have : c ^ x * c ^ (i + j - x) = c ^ (i + j) := by simp_all [← pow_add]
+      grind
+  _ ≤ gaussNorm v c p * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
+      gcongr
+      exact le_gaussNorm v _ hc x
+  _ = v (p.coeff i) * c ^ i * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
+      rw [hi_p]
+  _ < v (p.coeff i) * c ^ i * (v (q.coeff j) * c ^ j) := by
+      gcongr 1
+      · apply mul_pos
+        have : v (p.coeff i) ≠ 0 := by
+          --by contradiction
+          sorry
+        positivity
+        positivity
+      · -- need 1 ≤ c
+        sorry
+  _ = v (p.coeff i) * v (q.coeff j) * c ^ (i + j) := by
+      ring
+
+/-
+  calc
+  v (p.coeff x) * v (q.coeff (i + j - x))
+    ≤ gaussNorm v c p * v (q.coeff (i + j - x)) := by
+      gcongr
+
+      sorry
+  _ < v (p.coeff i) * v (q.coeff j) := by sorry -/
+
+  /- calc
   v (p.coeff i) * c ^ i * (v (q.coeff j) * c ^ j)
     = v (p.coeff i * q.coeff j) * c ^ (i + j) := by grind
-  _ ≤ v (∑ x ∈ antidiagonal (i + j), p.coeff x.1 * q.coeff x.2) * c ^ (i + j) := by
+  _ = v (∑ x ∈ antidiagonal (i + j), p.coeff x.1 * q.coeff x.2) * c ^ (i + j) := by
       gcongr
-      rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk, map_mul, IsNonarchimedean.apply_sum_eq_of_lt (f := v) (k := i + j) hna (self_mem_range_succ (i + j))]
+      rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk, map_mul,
+        IsNonarchimedean.apply_sum_eq_of_lt (f := v) (k := i + j) hna (self_mem_range_succ (i + j))]
       sorry
-      sorry
+      sorry -/
 
 
 
 theorem gaussNorm_mul [IsDomain R] [MulHomClass F R ℝ] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
     (hna : IsNonarchimedean v) (p q : R[X]) (hc : 0 ≤ c) :
     (p * q).gaussNorm v c = p.gaussNorm v c * q.gaussNorm v c := by
-  apply le_antisymm
-  exact gaussNorm_mul_le_mul_gaussNorm v c hna p q hc
+  apply le_antisymm <| gaussNorm_mul_le_mul_gaussNorm v c hna p q hc
+
   sorry
   --exact mul_gaussNorm_le_gaussNorm_mul v c hna p q hc
   /- by_cases hpq : ¬ p * q = 0
