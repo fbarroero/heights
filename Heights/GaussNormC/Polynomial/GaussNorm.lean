@@ -249,6 +249,10 @@ theorem gaussNorm_mul_le_mul_gaussNorm [ZeroHomClass F R ℝ] [NonnegHomClass F 
       simp_rw [gaussNorm, h_supp_p] at this
       gcongr
 
+
+/- Note:
+IsDomain can be removed if we set 0 < c
+-/
 open Finset in
 theorem mul_gaussNorm_le_gaussNorm_mul {R F : Type*} [Ring R] [IsDomain R] [FunLike F R ℝ] [ZeroHomClass F R ℝ]
     [NonnegHomClass F R ℝ] [MulHomClass F R ℝ] [AddGroupSeminormClass F R ℝ]
@@ -256,21 +260,19 @@ theorem mul_gaussNorm_le_gaussNorm_mul {R F : Type*} [Ring R] [IsDomain R] [FunL
     p.gaussNorm v c * q.gaussNorm v c ≤ (p * q).gaussNorm v c := by
   rcases eq_or_lt_of_le hc with hc0 | hc0
   · rcases eq_or_ne (p * q) 0 <;> aesop
+  rcases eq_or_ne p 0 with hp0 | hp0
+  · simp [hp0]
+  rcases eq_or_ne q 0 with hq0 | hq0
+  · simp [hq0]
   obtain ⟨i, hi_p, hlt_p⟩ := exists_min_eq_gaussNorm v c p hc
   obtain ⟨j, hj_q, hlt_q⟩ := exists_min_eq_gaussNorm v c q hc
+  wlog hvpq : v (p.coeff i) ≠ 0 ∧ v (q.coeff j) ≠ 0
+  · grind [mul_mul_mul_comm, gaussNorm_nonneg]
+  have := hvpq.1
+  have := hvpq.2
   apply le_of_eq_of_le _ <| (p * q).le_gaussNorm v hc (i + j)
   rw [hi_p, hj_q, coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk]
   simp
-/-   have hnaaaa (n : ℕ) : IsNonarchimedean (fun x ↦ v x * c ^ n) := by
-    intro a b
-    calc
-    v (a + b) * c ^ n
-      ≤ max (v a) (v b) * c ^ n := by
-        gcongr
-        exact hna a b
-    _ = max (v a * c ^ n) (v b * c ^ n) := by
-      rw [max_mul_of_nonneg _ _ (pow_nonneg hc _)] -/
-
   have : i ∈ range (i + j).succ := by simp
   have := IsNonarchimedean.apply_sum_eq_of_lt hna (k := i) (l := fun x ↦ p.coeff x * q.coeff (i + j - x)) (s := range (i + j).succ) this
   rw [this]
@@ -279,67 +281,45 @@ theorem mul_gaussNorm_le_gaussNorm_mul {R F : Type*} [Ring R] [IsDomain R] [FunL
   simp
   intro x hx hneq
   apply lt_of_mul_lt_mul_right (a := c ^ (i + j)) _ <| pow_nonneg hc (i + j)
-  calc
-  v (p.coeff x) * v (q.coeff (i + j - x)) * c ^ (i + j)
+  have : v (p.coeff x) * v (q.coeff (i + j - x)) * c ^ (i + j)
     = v (p.coeff x) * c ^ x * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
       have : c ^ x * c ^ (i + j - x) = c ^ (i + j) := by simp_all [← pow_add]
       grind
-  _ ≤ gaussNorm v c p * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
-      gcongr
-      exact le_gaussNorm v _ hc x
-  _ = v (p.coeff i) * c ^ i * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
-      rw [hi_p]
-  _ < v (p.coeff i) * c ^ i * (v (q.coeff j) * c ^ j) := by
-      gcongr 1
-      · apply mul_pos
-        have : v (p.coeff i) ≠ 0 := by
-          --by contradiction
-          sorry
-        positivity
-        positivity
-      · -- need 1 ≤ c
-        sorry
-  _ = v (p.coeff i) * v (q.coeff j) * c ^ (i + j) := by
-      ring
-
-/-
-  calc
-  v (p.coeff x) * v (q.coeff (i + j - x))
-    ≤ gaussNorm v c p * v (q.coeff (i + j - x)) := by
-      gcongr
-
-      sorry
-  _ < v (p.coeff i) * v (q.coeff j) := by sorry -/
-
-  /- calc
-  v (p.coeff i) * c ^ i * (v (q.coeff j) * c ^ j)
-    = v (p.coeff i * q.coeff j) * c ^ (i + j) := by grind
-  _ = v (∑ x ∈ antidiagonal (i + j), p.coeff x.1 * q.coeff x.2) * c ^ (i + j) := by
-      gcongr
-      rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk, map_mul,
-        IsNonarchimedean.apply_sum_eq_of_lt (f := v) (k := i + j) hna (self_mem_range_succ (i + j))]
-      sorry
-      sorry -/
+  rw [this]
+  rcases lt_or_gt_of_ne hneq with hlt | hgt
+  · calc
+    v (p.coeff x) * c ^ x * (v (q.coeff (i + j - x)) * c ^ (i + j - x))
+    _ ≤ v (p.coeff x) * c ^ x * gaussNorm v c q := by
+        gcongr
+        exact le_gaussNorm v q hc (i + j - x)
+    _ = v (p.coeff x) * c ^ x * (v (q.coeff j) * c ^ j) := by
+        rw [hj_q]
+    _ < v (p.coeff i) * c ^ i * (v (q.coeff j) * c ^ j) := by
+        gcongr 1
+        grind
+    _ = v (p.coeff i) * v (q.coeff j) * c ^ (i + j) := by
+        ring
+  · calc
+    v (p.coeff x) * c ^ x * (v (q.coeff (i + j - x)) * c ^ (i + j - x))
+    _ ≤ gaussNorm v c p * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
+        gcongr
+        exact le_gaussNorm v _ hc x
+    _ = v (p.coeff i) * c ^ i * (v (q.coeff (i + j - x)) * c ^ (i + j - x)) := by
+        rw [hi_p]
+    _ < v (p.coeff i) * c ^ i * (v (q.coeff j) * c ^ j) := by
+        gcongr 1
+        grind
+    _ = v (p.coeff i) * v (q.coeff j) * c ^ (i + j) := by
+        ring
 
 
 
-theorem gaussNorm_mul [IsDomain R] [MulHomClass F R ℝ] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
+theorem gaussNorm_mul {R F : Type*} [Ring R] [IsDomain R] [FunLike F R ℝ] [ZeroHomClass F R ℝ]
+    [NonnegHomClass F R ℝ] [MulHomClass F R ℝ] [AddGroupSeminormClass F R ℝ] {v : F}
     (hna : IsNonarchimedean v) (p q : R[X]) (hc : 0 ≤ c) :
     (p * q).gaussNorm v c = p.gaussNorm v c * q.gaussNorm v c := by
   apply le_antisymm <| gaussNorm_mul_le_mul_gaussNorm v c hna p q hc
-
-  sorry
-  --exact mul_gaussNorm_le_gaussNorm_mul v c hna p q hc
-  /- by_cases hpq : ¬ p * q = 0
-  · have h_supp_p : p.support.Nonempty := support_nonempty.mpr <| left_ne_zero_of_mul hpq
-    have h_supp_q : q.support.Nonempty := support_nonempty.mpr <| right_ne_zero_of_mul hpq
-    simp only [gaussNorm, support_nonempty, ne_eq, hpq, not_false_eq_true, ↓reduceDIte, h_supp_p,
-      h_supp_q]
-    · sorry
-  · rw [not_not, mul_eq_zero] at hpq
-    cases hpq with
-    | inl h => simp [h]
-    | inr h => simp [h] -/
+  exact mul_gaussNorm_le_gaussNorm_mul c hna p q hc
 
 end Polynomial
 /-
