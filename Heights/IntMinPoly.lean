@@ -23,6 +23,22 @@ theorem den_coeff_dvd_lcmDen (p : ℚ[X]) (i : ℕ) : (p.coeff i).den ∣ p.lcmD
 def eraseDen (p : ℚ[X]) : ℤ[X] :=
   ofFn (p.natDegree + 1) (fun i ↦ (p.lcmDen) / (p.coeff i).den * (p.coeff i).num)
 
+theorem foo (p : ℚ[X]) : p.eraseDen.map (algebraMap ℤ ℚ) = p.lcmDen * p := by
+  simp [eraseDen]
+  sorry
+
+theorem eraseDen_map (p : ℤ[X]) : (p.map (algebraMap ℤ ℚ)).eraseDen = p := by
+  ext i
+  simp [eraseDen, coeff_map, eq_intCast, Rat.num_intCast, Rat.den_intCast, lcmDen_poly_int]
+  rcases le_or_gt i p.natDegree with h | h
+  · rw [ofFn_coeff_eq_val_of_lt]
+    simpa [p.natDegree_map_eq_of_injective <| RingHom.injective_int (castRingHom ℚ)]
+  · rw [ofFn_coeff_eq_zero_of_ge, coeff_eq_zero_of_natDegree_lt h]
+    rw [p.natDegree_map_eq_of_injective <| RingHom.injective_int (castRingHom ℚ)]
+    omega
+
+
+
 theorem eraseDen_eq_sum_monomial (p : ℚ[X]) : p.eraseDen =
     ∑ i : Fin (p.natDegree + 1), monomial i ((lcmDen p) / (p.coeff i).den * (p.coeff i).num) := by
   simp [eraseDen, ofFn_eq_sum_monomial]
@@ -54,8 +70,6 @@ theorem eraseDen_support (p : ℚ[X]) : p.eraseDen.support = p.support := by
   · rw [not_le] at h
     simpa [eraseDen, ofFn_coeff_eq_zero_of_ge _ h] using coeff_eq_zero_of_natDegree_lt h
 
-
-
 theorem eraseDen_natDegree_eq (p : ℚ[X]) : p.eraseDen.natDegree = p.natDegree := by
   apply natDegree_eq_natDegree
   simp [degree, eraseDen_support]
@@ -72,8 +86,8 @@ theorem eraseDen_leadingCoeff_of_monic {p : ℚ[X]} (hp : p.Monic) :
   sorry -/
 
   --apply Finset.induction_on
-
-theorem primitive (p : ℚ[X]) (hp : p.Monic) : p.eraseDen.IsPrimitive := by
+--TODO: GOLF
+theorem isPrimitive_eraseDen (p : ℚ[X]) (hp : p.Monic) : p.eraseDen.IsPrimitive := by
   rw [isPrimitive_iff_isUnit_of_C_dvd]
   by_contra! h
   simp only [C_dvd_iff_dvd_coeff] at h
@@ -134,11 +148,51 @@ end Polynomial
 
 namespace NumberField
 
-variable {K : Type*} [Field K] [Algebra ℚ K] (x : K) (hx : IsIntegral ℚ x)
+variable {K : Type*} [Field K] [Algebra ℚ K] {x : K} (hx : IsIntegral ℚ x)
 
 open Polynomial
 
-noncomputable def intMinpoly : ℤ[X] := eraseDen (minpoly ℚ x)
+theorem lcmDen_minpoly_eq_one_of_isIntegral_int (hx : IsIntegral ℤ x) : (minpoly ℚ x).lcmDen = 1 := by
+  rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hx]
+  exact lcmDen_poly_int <| minpoly ℤ x
+
+noncomputable def intMinpoly (x : K) : ℤ[X] := eraseDen (minpoly ℚ x)
+
+theorem intMinpoly_degree : (intMinpoly x).natDegree = (minpoly ℚ x).natDegree := by
+  rw [intMinpoly, eraseDen_natDegree_eq]
+
+theorem map_intMinpoly_eq_lcmDen_mul_minpoly :
+    (intMinpoly x).map (algebraMap ℤ ℚ) = (minpoly ℚ x).lcmDen * (minpoly ℚ x) := by
+
+  sorry
+
+theorem intMinpoly_eq_minpoly (hx : IsIntegral ℤ x) : intMinpoly x = minpoly ℤ x := by
+  rw [intMinpoly, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hx]
+  exact eraseDen_map (minpoly ℤ x)
+
+theorem minpoly_eq_map_intMinpoly_of_isIntegral (hx : IsIntegral ℤ x) :
+    (intMinpoly x).map (algebraMap ℤ ℚ) = minpoly ℚ x := by
+  rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hx, intMinpoly_eq_minpoly hx]
+
+include hx in
+theorem intMinpoly_primitive : (intMinpoly x).IsPrimitive :=
+  isPrimitive_eraseDen (minpoly ℚ x) (minpoly.monic hx)
+
+theorem intMinpoly_monic_of_isIntegral_int (hx : IsIntegral ℤ x) : (intMinpoly x).Monic := by
+  rw [intMinpoly, Monic.def, eraseDen_leadingCoeff_of_monic <| minpoly.monic hx.tower_top,
+    lcmDen_minpoly_eq_one_of_isIntegral_int hx, Nat.cast_one]
+
+include hx in
+lemma intMinpoly_irreducible : Irreducible (intMinpoly x) := by
+  rw [IsPrimitive.Int.irreducible_iff_irreducible_map_cast <| intMinpoly_primitive hx]
+  sorry
+
+
+theorem intMinpoly_eq_minpoly_map (hx : IsIntegral ℤ x) :
+    (intMinpoly x).map (algebraMap ℤ ℚ) = minpoly ℚ x := by
+  simp [intMinpoly, eraseDen]
+
+  sorry
 
 variable [NumberField K]
 

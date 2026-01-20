@@ -314,7 +314,25 @@ instance gaussNorm_isAbsoluteValue {R F : Type*} [Ring R] [FunLike F R ℝ] [Zer
     grind [isNonarchimedean_gaussNorm v hna (le_of_lt hc) p q, gaussNorm_nonneg]
   abv_mul' p q := gaussNorm_mul c hna p q hc}
 
+/-- If `v` is nonarchimedean the Gauss norm is an absolute value. -/
+theorem gaussNorm_isAbsoluteValue_of_absoluteValue {R : Type*} [Ring R] {v : AbsoluteValue R ℝ}
+    (hna : IsNonarchimedean v) (hc : 0 < c) :
+    IsAbsoluteValue (gaussNorm v c) := {
+  abv_nonneg' p := p.gaussNorm_nonneg v <| le_of_lt hc
+  abv_eq_zero' := gaussNorm_eq_zero_iff v _ (fun x => v.eq_zero.mp) hc
+  abv_add' p q := by
+    grind [isNonarchimedean_gaussNorm v hna (le_of_lt hc) p q, gaussNorm_nonneg]
+  abv_mul' p q := by
+    have : AddGroupSeminormClass (AbsoluteValue R ℝ) R ℝ :=
+    {
+      map_zero := by exact fun f ↦ AbsoluteValue.map_zero f
+      map_neg_eq_map := by exact fun f a ↦ AbsoluteValue.map_neg f a
+    }
 
+    apply gaussNorm_mul c hna p q hc
+    }
+
+#min_imports
 
 end Polynomial
 /-
