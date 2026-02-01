@@ -5,12 +5,12 @@ namespace Polynomial
 open Int
 
 /-- The least common multiple of the denominators of the coefficients of a polynomial over `ℚ`. -/
-def lcmDen (p : ℚ[X]) : ℕ := p.support.lcm fun i ↦ (p.coeff i).den
+def lcmDen (p : ℚ[X]) := p.support.lcm fun i ↦ (p.coeff i).den
 
 open Finset in
 /-- The least common multiple of the denominators of the coefficients of a polynomial over `ℤ` is 1.
 -/
-theorem lcmDen_poly_int (p : ℤ[X]) : (p.map (castRingHom ℚ)).lcmDen = 1 := by
+theorem lcmDen_cast (p : ℤ[X]) : (p.map (castRingHom ℚ)).lcmDen = 1 := by
   simp only [lcmDen, coeff_map, eq_intCast, Rat.den_intCast]
   apply dvd_antisymm_of_normalize_eq normalize_lcm rfl _ <| one_dvd _
   exact lcm_dvd <| fun b a ↦ one_dvd 1
@@ -20,16 +20,13 @@ theorem den_coeff_dvd_lcmDen (p : ℚ[X]) (i : ℕ) : (p.coeff i).den ∣ p.lcmD
   · exact Finset.dvd_lcm h
   · simp [notMem_support_iff.mp h]
 
-def eraseDen (p : ℚ[X]) : ℤ[X] :=
+def eraseDen (p : ℚ[X]) :=
   ofFn (p.natDegree + 1) (fun i ↦ (p.lcmDen) / (p.coeff i).den * (p.coeff i).num)
 
-theorem foo (p : ℚ[X]) : p.eraseDen.map (algebraMap ℤ ℚ) = p.lcmDen * p := by
-  simp [eraseDen]
-  sorry
 
 theorem eraseDen_map (p : ℤ[X]) : (p.map (algebraMap ℤ ℚ)).eraseDen = p := by
   ext i
-  simp [eraseDen, coeff_map, eq_intCast, Rat.num_intCast, Rat.den_intCast, lcmDen_poly_int]
+  simp [eraseDen, coeff_map, eq_intCast, Rat.num_intCast, Rat.den_intCast, lcmDen_cast]
   rcases le_or_gt i p.natDegree with h | h
   · rw [ofFn_coeff_eq_val_of_lt]
     simpa [p.natDegree_map_eq_of_injective <| RingHom.injective_int (castRingHom ℚ)]
@@ -52,6 +49,15 @@ theorem eraseDen_coeff (p : ℚ[X]) :
     simp only [eraseDen, ofFn_coeff_eq_zero_of_ge _ h, zero_eq_mul, Rat.num_eq_zero]
     right
     exact coeff_eq_zero_of_natDegree_lt h
+
+
+theorem eraseDen_map_castRingHom_eq (p : ℚ[X]) : p.eraseDen.map (castRingHom ℚ) = p.lcmDen * p := by
+  ext i
+  rw [natCast_mul, coeff_smul, coeff_map, eraseDen_coeff, ← Rat.num_div_den (p.coeff i)]
+  simp
+  rw [mul_div, mul_comm (p.lcmDen : ℚ), ← mul_div, mul_comm]
+  congr
+  refine cast_div_ofNat_charZero <| den_coeff_dvd_lcmDen p i
 
 theorem eraseDen_support (p : ℚ[X]) : p.eraseDen.support = p.support := by
   ext i
@@ -154,7 +160,7 @@ open Polynomial
 
 theorem lcmDen_minpoly_eq_one_of_isIntegral_int (hx : IsIntegral ℤ x) : (minpoly ℚ x).lcmDen = 1 := by
   rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hx]
-  exact lcmDen_poly_int <| minpoly ℤ x
+  exact lcmDen_cast <| minpoly ℤ x
 
 noncomputable def intMinpoly (x : K) : ℤ[X] := eraseDen (minpoly ℚ x)
 
@@ -162,9 +168,9 @@ theorem intMinpoly_degree : (intMinpoly x).natDegree = (minpoly ℚ x).natDegree
   rw [intMinpoly, eraseDen_natDegree_eq]
 
 theorem map_intMinpoly_eq_lcmDen_mul_minpoly :
-    (intMinpoly x).map (algebraMap ℤ ℚ) = (minpoly ℚ x).lcmDen * (minpoly ℚ x) := by
+    (intMinpoly x).map (Int.castRingHom ℚ) = (minpoly ℚ x).lcmDen * (minpoly ℚ x) :=
+  eraseDen_map_castRingHom_eq _
 
-  sorry
 
 theorem intMinpoly_eq_minpoly (hx : IsIntegral ℤ x) : intMinpoly x = minpoly ℤ x := by
   rw [intMinpoly, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hx]
@@ -181,6 +187,18 @@ theorem intMinpoly_primitive : (intMinpoly x).IsPrimitive :=
 theorem intMinpoly_monic_of_isIntegral_int (hx : IsIntegral ℤ x) : (intMinpoly x).Monic := by
   rw [intMinpoly, Monic.def, eraseDen_leadingCoeff_of_monic <| minpoly.monic hx.tower_top,
     lcmDen_minpoly_eq_one_of_isIntegral_int hx, Nat.cast_one]
+
+theorem aaa : eval x ((intMinpoly x).map (Int.castRingHom K)) = 0 := by
+  have : (intMinpoly x).map (Int.castRingHom K) = ((intMinpoly x).map (Int.castRingHom ℚ)).map (algebraMap ℚ K) := by
+    rw [Polynomial.map_map]
+    congr
+    exact RingHom.ext_int (Int.castRingHom K) ((algebraMap ℚ K).comp (Int.castRingHom ℚ))
+  simp [this, map_intMinpoly_eq_lcmDen_mul_minpoly]
+
+include hx in
+theorem mem_aroots_intMinpoly : x ∈ (intMinpoly x).aroots K := by
+  simp [aroots]
+  sorry
 
 include hx in
 lemma intMinpoly_irreducible : Irreducible (intMinpoly x) := by
