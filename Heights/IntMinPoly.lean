@@ -20,7 +20,7 @@ theorem den_coeff_dvd_lcmDen (p : ℚ[X]) (i : ℕ) : (p.coeff i).den ∣ p.lcmD
   · exact Finset.dvd_lcm h
   · simp [notMem_support_iff.mp h]
 
-def eraseDen (p : ℚ[X]) :=
+noncomputable def eraseDen (p : ℚ[X]) :=
   ofFn (p.natDegree + 1) (fun i ↦ (p.lcmDen) / (p.coeff i).den * (p.coeff i).num)
 
 
@@ -28,9 +28,11 @@ theorem eraseDen_map (p : ℤ[X]) : (p.map (algebraMap ℤ ℚ)).eraseDen = p :=
   ext i
   simp [eraseDen, coeff_map, eq_intCast, Rat.num_intCast, Rat.den_intCast, lcmDen_cast]
   rcases le_or_gt i p.natDegree with h | h
-  · rw [ofFn_coeff_eq_val_of_lt]
+  · apply ofFn_coeff_eq_val_of_lt
+    --rw [ofFn_coeff_eq_val_of_lt (i:=i) (n := ((map (castRingHom ℚ) p).natDegree + 1)) (v:= fun i ↦ p.coeff (i : ℕ))]
     simpa [p.natDegree_map_eq_of_injective <| RingHom.injective_int (castRingHom ℚ)]
-  · rw [ofFn_coeff_eq_zero_of_ge, coeff_eq_zero_of_natDegree_lt h]
+  · rw [coeff_eq_zero_of_natDegree_lt h]
+    apply ofFn_coeff_eq_zero_of_ge
     rw [p.natDegree_map_eq_of_injective <| RingHom.injective_int (castRingHom ℚ)]
     omega
 
