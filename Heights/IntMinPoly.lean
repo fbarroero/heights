@@ -215,7 +215,7 @@ theorem intMinpoly_eq_minpoly_map (hx : IsIntegral ℤ x) :
 variable [NumberField K]
 
 --need to prove height is gal invariant
-theorem equal {x : K} (hpol : ((intMinpoly x).map (algebraMap ℤ K)).Splits /- (RingHom.id K) -/) :
+theorem leadingCoeff_eq_finprod {x : K} (hpol : ((intMinpoly x).map (algebraMap ℤ K)).Splits /- (RingHom.id K) -/) :
     (intMinpoly x).leadingCoeff =  ∏ᶠ w : FinitePlace K, max 1 (w x) := by
   --have h_poleq := eq_prod_roots_of_splits_id hpol
   --simp only [algebraMap_int_eq] at h_poleq
