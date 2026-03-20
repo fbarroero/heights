@@ -1,4 +1,16 @@
+/-
+This file was edited by Aristotle (https://aristotle.harmonic.fun).
+
+Lean version: leanprover/lean4:v4.24.0
+Mathlib version: f897ebcf72cd16f89ab4577d0c826cd14afaafc7
+This project request had uuid: 1bdb6af4-641b-4008-83d7-57528ceebb2a
+
+To cite Aristotle, tag @Aristotle-Harmonic on GitHub PRs/issues, and add as co-author to commits:
+Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
+-/
+
 import Mathlib
+
 
 namespace Polynomial
 
@@ -75,7 +87,7 @@ theorem prim : (intMinpoly R K x).IsPrimitive := by
   apply h_normalized_primitive;
   exact isPrimitive_primPart (IsLocalization.integerNormalization (nonZeroDivisors R) (minpoly K x))
 
-
+/- Aristotle failed to find a proof. -/
 theorem irred : Irreducible (intMinpoly R K x) := sorry
 
 end intMinpoly
