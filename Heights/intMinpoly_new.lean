@@ -17,7 +17,18 @@ noncomputable def eraseDen : R[X] :=
   if p = 0 then 0 else
   normalize (IsLocalization.integerNormalization M p).primPart
 
-#find_home! eraseDen
+
+example : normalize (- X + 1 : ℤ[X]) = X - 1 := by
+  have : (- X + 1 : ℤ[X]).natDegree = 1 := by
+    compute_degree
+    decide
+  have : (- X + 1 : ℤ[X]).leadingCoeff = -1 := by
+    rw [Polynomial.leadingCoeff, this]
+    aesop
+  simp [normalize, normUnit, this]
+  ring
+
+
 
 end eraseDen
 
